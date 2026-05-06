@@ -103,8 +103,6 @@ Apache 2.0 — see [LICENSE](./LICENSE)
 
 ## Built with KAZI
 
-- **CARTA** — Patent commercialization intelligence
-- **RFI** — Research funding intelligence
 - **insightbydrjean** — AI-powered thought leadership
 
 ---
