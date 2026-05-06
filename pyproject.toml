@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kazi"
+version = "0.1.0"
+description = "Open-source platform for building AI-powered professional services products"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+authors = [
+    { name = "Dr. Jean Njoroge", email = "hello@kazi54.com" },
+]
+keywords = ["ai", "agents", "orchestration", "professional-services", "multi-agent"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "pydantic>=2.0.0",
+    "jinja2>=3.1.0",
+    "pyyaml>=6.0",
+    "httpx>=0.24.0",
+    "supabase>=2.0.0",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+]
+pdf = [
+    "weasyprint>=60.0",
+]
+
+[project.scripts]
+kazi = "cli.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/Jean-njoroge/KAZI"
+Documentation = "https://github.com/Jean-njoroge/KAZI/tree/main/docs"
+Repository = "https://github.com/Jean-njoroge/KAZI"
+Issues = "https://github.com/Jean-njoroge/KAZI/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kazi"]

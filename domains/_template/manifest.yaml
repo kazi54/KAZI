@@ -1,0 +1,16 @@
+# Domain Plugin Manifest
+# Copy this directory and customize for your domain.
+
+name: my-domain
+display_name: My Domain
+version: 0.1.0
+description: A brief description of what this domain does
+
+# API routes will be mounted at this prefix
+routes_prefix: /api/my-domain
+
+# Dashboard pages (auto-registered in the frontend router)
+dashboard_pages:
+  - id: my-domain-home
+    path: /my-domain
+    component: MyDomainDashboard

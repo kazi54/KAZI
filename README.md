@@ -1,5 +1,8 @@
 # KAZI
+<<<<<<< HEAD
 KAZI is a harness framework for professional services agents. Define your guides (scoring rubrics, templates, pipeline structure) and sensors (validation, scoring, human review) — KAZI orchestrates the rest."
+=======
+>>>>>>> 7dc9e4f (feat: initial platform scaffold (src layout))
 
 **The open-source platform for building AI-powered professional services products.**
 

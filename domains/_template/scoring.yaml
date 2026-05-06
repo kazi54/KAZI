@@ -1,0 +1,54 @@
+# Scoring Configuration
+# Define your scoring dimensions and legend here.
+
+dimensions:
+  - name: relevance
+    weight: 0.40
+    description: How relevant is this to the target profile?
+    sub_factors:
+      - domain_match
+      - keyword_overlap
+
+  - name: quality
+    weight: 0.35
+    description: Quality and credibility of the source
+    sub_factors:
+      - source_authority
+      - data_completeness
+
+  - name: timeliness
+    weight: 0.25
+    description: How time-sensitive is this?
+    sub_factors:
+      - deadline_proximity
+      - recency
+
+# Score legend — maps score ranges to actions
+legend:
+  - name: Dismiss
+    min: 0
+    max: 40
+    action: dismiss
+    color: "#ef4444"
+    description: Not worth pursuing
+
+  - name: Review
+    min: 40
+    max: 60
+    action: review
+    color: "#f59e0b"
+    description: Needs human evaluation
+
+  - name: Pursue
+    min: 60
+    max: 80
+    action: pursue
+    color: "#22c55e"
+    description: Strong candidate, take action
+
+  - name: Fast-track
+    min: 80
+    max: 101
+    action: fast-track
+    color: "#10b981"
+    description: Immediate priority
