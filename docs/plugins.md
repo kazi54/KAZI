@@ -10,9 +10,9 @@ A domain represents one professional services product built on KAZI OS. Examples
 
 | Domain | Product | What it does |
 |--------|---------|--------------|
-| `carta` | CARTA | Patent commercialization analysis |
-| `rfi` | Research Funding Intelligence | Grant/funding opportunity matching |
-| `insight` | insightbydrjean | Thought leadership content production |
+| `market_intel` | Market Scout | Competitive intelligence and signal monitoring |
+| `talent` | Talent Radar | Candidate sourcing and evaluation |
+| `content` | Content Engine | Thought leadership content production |
 
 Each domain is a separate repository that plugs into the KAZI OS platform via a standard interface.
 
@@ -55,52 +55,54 @@ The `manifest.yaml` is the single source of truth for a domain's configuration. 
 # manifest.yaml
 
 domain:
-  name: carta
-  display_name: "CARTA"
-  description: "Patent commercialization analysis and licensing intelligence"
+  name: market_intel
+  display_name: "Market Scout"
+  description: "Competitive intelligence — scout signals, score relevance, deliver weekly briefs"
   version: "2.0.0"
-  author: "KAZI54"
+  author: "Your Org"
 
 # Pipeline definitions
 pipelines:
-  full_audit:
-    description: "Complete patent audit (9 sections)"
+  weekly_brief:
+    description: "Full weekly competitive intelligence brief"
     stages:
-      - agent: patent_scout
-        required: true
       - agent: market_scout
         required: true
-      - agent: inventor_profiler
+      - agent: signal_classifier
+        required: true
+      - agent: relevance_scorer
+        required: true
+      - agent: company_profiler
         required: false
-      - agent: commercial_scorer
-        required: true
-      - agent: licensee_finder
-        required: true
-      - agent: report_compiler
-        required: true
-    trigger:
-      type: on_demand
-    delivery:
-      template: audit_report_v2.html
-      format: [html, pdf]
-
-  monitoring:
-    description: "Monthly re-evaluation of delivered reports"
-    stages:
-      - agent: drift_detector
-        required: true
-      - agent: re_scorer
+      - agent: brief_compiler
         required: true
     trigger:
       type: scheduled
-      cron: "0 2 1 * *"    # First of every month at 2 AM
+      cron: "0 6 * * 1"    # Every Monday at 6 AM
+    delivery:
+      template: weekly_brief_v2.html
+      format: [html, pdf]
+
+  signal_alert:
+    description: "Real-time alert when a high-urgency signal is detected"
+    stages:
+      - agent: market_scout
+        required: true
+      - agent: relevance_scorer
+        required: true
+    trigger:
+      type: event
+      condition: "relevance_scorer.overall_score >= 85"
+    delivery:
+      template: signal_card.html
+      format: [email]
 
 # Scoring configuration reference
 scoring: scoring.yaml
 
 # API routes
 routes:
-  prefix: /carta
+  prefix: /market-intel
   module: routes
 
 # Dashboard pages
@@ -108,33 +110,33 @@ dashboard:
   pages:
     - id: home
       title: "Home"
-      path: /carta
-    - id: engagements
-      title: "Engagements"
-      path: /carta/engagements
-    - id: revenue
-      title: "Revenue"
-      path: /carta/revenue
+      path: /market-intel
+    - id: signals
+      title: "Signals"
+      path: /market-intel/signals
+    - id: briefs
+      title: "Briefs"
+      path: /market-intel/briefs
 
 # HITL configuration
 hitl:
-  policy: always
+  policy: on_high_score
   reviewers:
     - role: domain_expert
   sections_requiring_review:
-    - strategy_memo
     - executive_summary
+    - strategic_implications
 
 # Custom tools this domain needs
 tools:
-  - name: uspto_api
-    module: data_sources.uspto
-  - name: google_patents
-    module: data_sources.google_patents
+  - name: news_api
+    module: data_sources.news
+  - name: company_registry
+    module: data_sources.companies
 
 # Database schema
 database:
-  schema: carta
+  schema: market_intel
   migrations: schemas/
 ```
 
@@ -208,16 +210,17 @@ Edit `manifest.yaml` with your domain's configuration:
 Create agents in the `agents/` directory. Each agent extends one of the base classes:
 
 ```python
-# agents/my_scout.py
+# agents/scout.py
 from kazi.agents import BaseScoutAgent
 
-class MyScout(BaseScoutAgent):
-    name = "my_scout"
-    description = "Discovers relevant data for this domain"
+class MarketScout(BaseScoutAgent):
+    name = "market_scout"
+    description = "Searches news and company registries for competitive signals"
 
     async def run(self, input_data: dict) -> dict:
-        # Your domain-specific logic
-        return {"findings": [...]}
+        industry = input_data["industry"]
+        signals = await self.tools.news_api.search(query=industry, days_back=7)
+        return {"signals": signals, "signal_count": len(signals)}
 ```
 
 ### Step 4: Define Scoring
@@ -239,7 +242,7 @@ router = APIRouter()
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "domain": "my-domain"}
+    return {"status": "ok", "domain": "market-intel"}
 
 @router.post("/jobs")
 async def create_job(payload: dict):
@@ -281,8 +284,8 @@ Domains are isolated from each other:
 
 | Boundary | Enforcement |
 |----------|-------------|
-| Database | Separate PostgreSQL schemas (`carta.*`, `rfi.*`, `insight.*`) |
-| Routes | Separate API prefixes (`/api/carta/`, `/api/rfi/`, `/api/insight/`) |
+| Database | Separate PostgreSQL schemas (`market_intel.*`, `talent.*`, `content.*`) |
+| Routes | Separate API prefixes (`/api/market-intel/`, `/api/talent/`, `/api/content/`) |
 | Agents | Registered under domain namespace |
 | Templates | Stored in domain's own `templates/` directory |
 | Config | Each domain has its own `manifest.yaml` and `scoring.yaml` |
@@ -321,16 +324,16 @@ domain:
 
 ## Inter-Domain Communication
 
-In rare cases, domains may need to reference each other's outputs (e.g., CARTA needs inventor data that RFI already has). This is handled through the platform's shared data layer:
+In rare cases, domains may need to reference each other's outputs (e.g., Market Scout needs company data that Talent Radar already has). This is handled through the platform's shared data layer:
 
 ```python
 # Access another domain's data via platform API (not direct import)
 from kazi.platform import data_bridge
 
-inventor_profile = await data_bridge.query(
-    domain="rfi",
-    entity="researcher_profiles",
-    filter={"name": "Dr. Sarah Chen"},
+company_profile = await data_bridge.query(
+    domain="talent",
+    entity="company_profiles",
+    filter={"name": "Acme Corp"},
 )
 ```
 
@@ -340,8 +343,8 @@ This maintains isolation while enabling controlled data sharing. The `data_bridg
 # manifest.yaml
 permissions:
   read_from:
-    - domain: rfi
-      entities: [researcher_profiles]
+    - domain: talent
+      entities: [company_profiles]
 ```
 
 ---
@@ -353,9 +356,9 @@ permissions:
 ```
 kazi/
 ├── domains/
-│   ├── carta → symlink to ../kazi-carta
-│   ├── rfi → symlink to ../kazi-rfi
-│   └── insight → symlink to ../kazi-insight
+│   ├── market_intel → symlink to ../kazi-market-intel
+│   ├── talent → symlink to ../kazi-talent
+│   └── content → symlink to ../kazi-content
 ```
 
 ### Docker Production
@@ -366,9 +369,9 @@ services:
   kazi:
     build: ./kazi
     volumes:
-      - ./kazi-carta:/app/domains/carta
-      - ./kazi-rfi:/app/domains/rfi
-      - ./kazi-insight:/app/domains/insight
+      - ./kazi-market-intel:/app/domains/market_intel
+      - ./kazi-talent:/app/domains/talent
+      - ./kazi-content:/app/domains/content
     environment:
       - SUPABASE_URL=...
       - SUPABASE_KEY=...

@@ -1,6 +1,6 @@
 # Building Agents
 
-This guide covers everything you need to know to build production-quality agents for KAZI OS — from the simplest single-purpose agent to complex multi-step reasoning agents with tool access and retry logic.
+This guide covers everything you need to know to build production-quality agents for KAZI OS, from the simplest single-purpose agent to complex multi-step reasoning agents with tool access and retry logic.
 
 ---
 
@@ -62,25 +62,33 @@ Agents that discover, research, or fetch information from external sources.
 ```python
 from kazi.agents import BaseScoutAgent
 
-class PatentScout(BaseScoutAgent):
-    name = "patent_scout"
-    description = "Fetches patent data from USPTO and builds a patent profile"
-    tools = ["uspto_api", "google_patents"]
+class MarketScout(BaseScoutAgent):
+    name = "market_scout"
+    description = "Searches news sources and company registries for competitive signals"
+    tools = ["news_api", "web_search", "company_registry"]
 
     async def run(self, input_data: dict) -> dict:
-        patent_number = input_data["patent_number"]
-        
-        # Fetch primary patent
-        patent = await self.tools.uspto_api.fetch(patent_number)
-        
-        # Fetch citations
-        citations = await self.tools.google_patents.citations(patent_number)
-        
+        industry = input_data["industry"]
+        focus_areas = input_data.get("focus", [])
+
+        # Fetch recent signals from news sources
+        signals = await self.tools.news_api.search(
+            query=industry,
+            days_back=7,
+        )
+
+        # Enrich with company data where relevant
+        for signal in signals:
+            if signal.get("company"):
+                signal["company_profile"] = await self.tools.company_registry.lookup(
+                    signal["company"]
+                )
+
         return {
-            "patent": patent,
-            "citations": citations,
-            "citation_count": len(citations),
-            "family_size": patent.get("family_size", 1),
+            "industry": industry,
+            "signals": signals,
+            "signal_count": len(signals),
+            "sources_checked": ["news_api", "company_registry"],
         }
 ```
 
@@ -96,33 +104,32 @@ Agents that evaluate items against a scoring rubric.
 ```python
 from kazi.agents import BaseScoreAgent
 
-class CommercialScoreAgent(BaseScoreAgent):
-    name = "commercial_scorer"
-    description = "Scores patent commercial potential across 5 dimensions"
+class RelevanceScorer(BaseScoreAgent):
+    name = "relevance_scorer"
+    description = "Scores market signals across 4 relevance dimensions"
 
     async def run(self, input_data: dict) -> dict:
-        patent_data = input_data["_context"]["patent_scout"]
-        
+        signal_data = input_data["_context"]["market_scout"]
+
         scores = {
-            "market_size": self.score_market(patent_data),
-            "competitive_advantage": self.score_competition(patent_data),
-            "implementation_readiness": self.score_readiness(patent_data),
-            "licensing_potential": self.score_licensing(patent_data),
-            "strategic_alignment": self.score_alignment(patent_data),
+            "relevance": self.score_relevance(signal_data),
+            "competitive_impact": self.score_impact(signal_data),
+            "urgency": self.score_urgency(signal_data),
+            "source_credibility": self.score_credibility(signal_data),
         }
-        
+
         # Use the scoring system from scoring.yaml
         overall = self.scoring_system.compute(scores)
         tier = self.scoring_system.legend.classify(overall)
-        
+
         return {
             "dimensions": scores,
             "overall_score": overall,
             "tier": tier.name,
             "recommendation": tier.action,
         }
-    
-    def score_market(self, data: dict) -> float:
+
+    def score_relevance(self, data: dict) -> float:
         # Domain-specific scoring logic
         ...
 ```
@@ -139,20 +146,20 @@ Agents that build structured profiles of entities (people, companies, technologi
 ```python
 from kazi.agents import BaseProfileAgent
 
-class InventorProfileAgent(BaseProfileAgent):
-    name = "inventor_profiler"
-    description = "Builds a structured profile of the patent inventor"
+class CompanyProfileAgent(BaseProfileAgent):
+    name = "company_profiler"
+    description = "Builds a structured profile of a competitor or market player"
 
     async def run(self, input_data: dict) -> dict:
-        inventor_name = input_data["inventor_name"]
-        
+        company_name = input_data["company_name"]
+
         return {
-            "name": inventor_name,
-            "affiliation": await self.lookup_affiliation(inventor_name),
-            "patent_count": await self.count_patents(inventor_name),
-            "h_index": await self.lookup_h_index(inventor_name),
-            "domains": await self.classify_domains(inventor_name),
-            "collaboration_network": await self.find_collaborators(inventor_name),
+            "name": company_name,
+            "sector": await self.classify_sector(company_name),
+            "funding_stage": await self.lookup_funding(company_name),
+            "employee_count": await self.estimate_headcount(company_name),
+            "recent_moves": await self.find_recent_activity(company_name),
+            "competitive_position": await self.assess_position(company_name),
         }
 ```
 
@@ -163,28 +170,28 @@ Agents that assemble final deliverables from accumulated pipeline data.
 ```python
 from kazi.agents import BaseCompileAgent
 
-class ReportCompiler(BaseCompileAgent):
-    name = "report_compiler"
-    description = "Renders the final audit report from scored data"
-    template = "templates/audit_report_v2.html"
+class BriefCompiler(BaseCompileAgent):
+    name = "brief_compiler"
+    description = "Renders the weekly intelligence brief from scored signals"
+    template = "templates/weekly_brief.html"
 
     async def run(self, input_data: dict) -> dict:
         context = input_data["_context"]
-        
+
         # Gather all data from previous stages
-        report_data = {
-            "patent": context["patent_scout"]["patent"],
-            "scores": context["commercial_scorer"],
-            "inventor": context["inventor_profiler"],
-            "licensees": context["licensee_finder"]["candidates"],
+        brief_data = {
+            "signals": context["market_scout"]["signals"],
+            "scores": context["relevance_scorer"],
+            "companies": context.get("company_profiler", {}),
+            "period": context["market_scout"].get("period", "last 7 days"),
         }
-        
+
         # Render template
-        html = self.render_template(self.template, report_data)
-        
+        html = self.render_template(self.template, brief_data)
+
         return {
             "report_html": html,
-            "report_title": f"CARTA Audit — {report_data['patent']['title']}",
+            "report_title": f"Weekly Brief — {brief_data['signals'][0]['industry']}",
             "delivery_format": "html",
         }
 ```
@@ -199,8 +206,8 @@ When agents run inside a pipeline, they receive the accumulated outputs of all p
 # If the pipeline is: scout → score → compile
 # Then the compile agent sees:
 input_data["_context"] = {
-    "scout": { ... scout's output ... },
-    "score": { ... score's output ... },
+    "market_scout": { ... scout's output ... },
+    "relevance_scorer": { ... scorer's output ... },
 }
 ```
 
@@ -218,15 +225,15 @@ class MyAgent(BaseAgent):
 
     async def run(self, input_data: dict) -> dict:
         # Tools are available as self.tools.<tool_name>
-        search_results = await self.tools.web_search("quantum computing patents 2024")
-        
+        search_results = await self.tools.web_search("electric vehicle market trends 2024")
+
         # LLM tool for generation/analysis
         analysis = await self.tools.llm.complete(
             prompt=f"Analyze these results: {search_results}",
             model="gpt-4o",
             temperature=0.2,
         )
-        
+
         return {"analysis": analysis}
 ```
 
@@ -279,7 +286,7 @@ If you define `output_schema`, the pipeline executor validates output and re-inv
 class StrictAgent(BaseAgent):
     output_schema = {
         "score": {"type": "number", "minimum": 0, "maximum": 100},
-        "tier": {"type": "string", "enum": ["abandon", "evaluate", "pursue", "fast_track"]},
+        "tier": {"type": "string", "enum": ["low", "moderate", "high", "critical"]},
     }
 
     async def run(self, input_data: dict) -> dict:
@@ -288,8 +295,8 @@ class StrictAgent(BaseAgent):
             # Adjust approach based on what went wrong
             errors = input_data["_validation_errors"]
             ...
-        
-        return {"score": 75, "tier": "pursue"}
+
+        return {"score": 75, "tier": "high"}
 ```
 
 ---
@@ -302,16 +309,16 @@ Test agents in isolation by calling `run()` directly:
 
 ```python
 import pytest
-from my_domain.agents.scout import PatentScout
+from my_domain.agents.scout import MarketScout
 
 @pytest.mark.asyncio
-async def test_patent_scout():
-    agent = PatentScout()
-    result = await agent.run({"patent_number": "US11234891"})
-    
-    assert "patent" in result
-    assert result["patent"]["number"] == "US11234891"
-    assert "citations" in result
+async def test_market_scout():
+    agent = MarketScout()
+    result = await agent.run({"industry": "electric vehicles", "focus": ["battery tech"]})
+
+    assert "signals" in result
+    assert result["signal_count"] > 0
+    assert "sources_checked" in result
 ```
 
 ### Integration Testing
@@ -320,13 +327,13 @@ Test agents within a pipeline:
 
 ```python
 from kazi.orchestrator import Pipeline
-from my_domain.agents import ScoutAgent, ScoreAgent
+from my_domain.agents import MarketScout, RelevanceScorer
 
 @pytest.mark.asyncio
 async def test_scout_score_pipeline():
-    pipeline = Pipeline(stages=[ScoutAgent(), ScoreAgent()])
-    result = await pipeline.execute({"patent_number": "US11234891"})
-    
+    pipeline = Pipeline(stages=[MarketScout(), RelevanceScorer()])
+    result = await pipeline.execute({"industry": "electric vehicles"})
+
     assert "overall_score" in result
     assert 0 <= result["overall_score"] <= 100
 ```
@@ -338,11 +345,11 @@ Use dependency injection to mock external tools in tests:
 ```python
 @pytest.mark.asyncio
 async def test_with_mock_tools():
-    agent = PatentScout()
-    agent.tools.uspto_api = MockUSPTOAPI(fixture="sample_patent.json")
-    
-    result = await agent.run({"patent_number": "US11234891"})
-    assert result["patent"]["title"] == "Sample Patent Title"
+    agent = MarketScout()
+    agent.tools.news_api = MockNewsAPI(fixture="sample_signals.json")
+
+    result = await agent.run({"industry": "electric vehicles"})
+    assert result["signal_count"] == 3
 ```
 
 ---

@@ -199,13 +199,14 @@ platform.*              ← Shared tables (users, orgs, jobs, agent registry)
 
 ### Domain Schemas
 
-Each domain defines its own tables. For example, a patent commercialization domain might have:
+Each domain defines its own tables. For example, a competitive intelligence domain might have:
 
 | Table | Purpose |
-|-------|---------|
-| `carta.engagements` | Client engagements |
-| `carta.reports` | Generated reports |
-| `carta.scores` | Historical score records |
+|-------|--------|
+| `market_intel.projects` | Client projects and focus areas |
+| `market_intel.signals` | Discovered market signals |
+| `market_intel.briefs` | Generated intelligence briefs |
+| `market_intel.scores` | Historical relevance scores |
 
 Row-Level Security (RLS) policies ensure data isolation between organizations.
 
@@ -270,7 +271,7 @@ The architecture is guided by these principles:
 
 2. **Domains are isolated.** A domain cannot access another domain's data or agents. The platform mediates all cross-domain interaction.
 
-3. **The platform is domain-agnostic.** KAZI OS knows nothing about patents, funding, or content. It knows about pipelines, scores, templates, and delivery.
+3. **The platform is domain-agnostic.** KAZI OS knows nothing about your specific domain. It knows about pipelines, scores, templates, and delivery.
 
 4. **Progressive complexity.** A domain can start with one agent and no scoring. It can add scoring, templates, HITL, and monitoring incrementally.
 

@@ -19,21 +19,22 @@ These patterns define how individual agents reason and act.
 **KAZI implementation:** Agents that extend `BaseScoutAgent` often use ReAct internally — they reason about what data to fetch, fetch it, evaluate whether they have enough, and continue or stop.
 
 ```python
-class PatentScout(BaseScoutAgent):
+class MarketScout(BaseScoutAgent):
     async def run(self, input_data: dict) -> dict:
         # Reason: What do I need?
-        patent_number = input_data["patent_number"]
+        industry = input_data["industry"]
         
-        # Act: Fetch from USPTO
-        patent_data = await self.fetch_patent(patent_number)
+        # Act: Search for recent market signals
+        signals = await self.search_news(industry)
         
-        # Reason: Do I have enough? Are there related patents?
-        if patent_data.get("family_members"):
-            # Act: Fetch family
-            family = await self.fetch_family(patent_data["family_id"])
-            patent_data["family"] = family
+        # Reason: Do I have enough? Are there related sectors?
+        if len(signals) < 5:
+            # Act: Broaden search to adjacent sectors
+            adjacent = await self.find_adjacent_sectors(industry)
+            more_signals = await self.search_news(adjacent[0])
+            signals.extend(more_signals)
         
-        return patent_data
+        return {"industry": industry, "signals": signals}
 ```
 
 ### 1.2 Tool Use
@@ -46,7 +47,7 @@ class PatentScout(BaseScoutAgent):
 
 ```python
 class MarketScout(BaseScoutAgent):
-    tools = ["web_search", "patent_database", "company_registry"]
+    tools = ["web_search", "news_api", "company_registry"]
     
     async def run(self, input_data: dict) -> dict:
         results = await self.tools.web_search(input_data["query"])
@@ -65,9 +66,9 @@ class MarketScout(BaseScoutAgent):
 # manifest.yaml
 pipeline:
   stages:
-    - agent: extract    # "Extract key claims from this patent"
-    - agent: classify   # "Classify these claims by technology domain"
-    - agent: score      # "Score commercial potential of each domain"
+    - agent: scout      # "Find recent market signals and competitor moves"
+    - agent: classify   # "Classify signals by category (product, funding, hire, partnership)"
+    - agent: score      # "Score relevance to client's focus areas"
 ```
 
 ### 1.4 Template Method
@@ -95,9 +96,9 @@ These patterns define how multiple agents work together.
 ```python
 # The orchestrator resolves which agents to call based on the manifest
 job = await orchestrator.create_job(
-    domain="carta",
-    pipeline="full_audit",
-    input_data={"patent_number": "US11234891"}
+    domain="market_intel",
+    pipeline="weekly_brief",
+    input_data={"industry": "electric vehicles", "focus": ["battery tech", "charging"]}
 )
 ```
 
@@ -118,14 +119,14 @@ pipeline = Pipeline(stages=[
     CompileAgent(),
 ])
 
-result = await pipeline.execute({"patent_number": "US11234891"})
+result = await pipeline.execute({"industry": "electric vehicles"})
 ```
 
 ### 2.3 Fan-Out
 
 **Intent:** Execute the same pipeline across multiple independent inputs in parallel, then collect all results.
 
-**When to use:** When you need to process a batch of items identically (e.g., score 10 patents, evaluate 50 funding opportunities).
+**When to use:** When you need to process a batch of items identically (e.g., score 10 market signals, evaluate 50 competitor announcements).
 
 **KAZI implementation:** The `FanOut` class wraps a pipeline and distributes inputs across parallel executions.
 
@@ -140,9 +141,9 @@ fanout = FanOut(
 )
 
 results = await fanout.execute([
-    {"patent": "US11234891"},
-    {"patent": "US10987654"},
-    {"patent": "US11567890"},
+    {"signal": "Tesla announces new battery chemistry"},
+    {"signal": "Rivian secures $2B manufacturing deal"},
+    {"signal": "BYD expands into European markets"},
 ])
 ```
 
@@ -210,7 +211,7 @@ confidence = base_confidence * decay_factor(days_since_scored)
 
 # If confidence drops below threshold, trigger re-evaluation
 if confidence < 0.6:
-    await orchestrator.create_job(domain="carta", pipeline="re_score", ...)
+    await orchestrator.create_job(domain="market_intel", pipeline="re_score", ...)
 ```
 
 ### 3.3 Closed-Loop Learning
@@ -274,7 +275,7 @@ for attempt in range(max_retries):
 
 **Intent:** When an external dependency fails (API timeout, rate limit), retry with increasing delays.
 
-**When to use:** Any agent that calls external APIs (USPTO, grants.gov, web search).
+**When to use:** Any agent that calls external APIs (news APIs, company registries, web search).
 
 **KAZI implementation:** The `BaseAgent` class provides built-in retry logic with exponential backoff. Agents inherit this without additional code.
 

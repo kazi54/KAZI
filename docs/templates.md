@@ -62,14 +62,14 @@ Every template follows a consistent structure:
 
 ```
 templates/
-├── audit_report_v2.html       # Versioned — never overwrite, always increment
-├── pathway_report_v2.html
-├── playbook_report_v2.html
-├── monitoring_report.html
-├── weekly_brief.html
+├── weekly_brief_v2.html       # Versioned — never overwrite, always increment
+├── signal_card.html
+├── competitor_profile.html
+├── trend_summary.html
 └── _partials/
-    ├── _cover.html            # Reusable partial (prefixed with underscore)
+    ├── _header.html           # Reusable partial (prefixed with underscore)
     ├── _score_grid.html
+    ├── _signal_row.html
     └── _legend.html
 ```
 
@@ -113,11 +113,11 @@ Templates receive a flat dictionary of variables from the `CompileAgent`. Standa
 | Variable | Type | Description |
 |----------|------|-------------|
 | `report_title` | string | Full title of the report |
-| `report_id` | string | Unique engagement ID (e.g., CRT-AUD-2026-0001) |
+| `report_id` | string | Unique engagement ID (e.g., MI-WB-2026-0001) |
 | `client_name` | string | Client organization name |
 | `client_contact` | string | Client contact person |
 | `date_generated` | string | ISO date of generation |
-| `tier_name` | string | Engagement tier (Audit, Pathway, Playbook) |
+| `tier_name` | string | Report type (Weekly Brief, Signal Card, Trend Summary) |
 | `scores` | dict | `{dimensions: {}, overall_score: float, tier: string}` |
 | `legend` | object | ScoreLegend instance for tier lookups |
 | `sections` | list | Ordered list of section content blocks |
@@ -147,14 +147,14 @@ Domain-specific variables are defined in the domain's `manifest.yaml` under `tem
 ```html
 <table>
     <thead>
-        <tr><th>Company</th><th>Fit Score</th><th>Rationale</th></tr>
+        <tr><th>Signal</th><th>Relevance</th><th>Summary</th></tr>
     </thead>
     <tbody>
-        {% for candidate in licensees %}
+        {% for signal in signals %}
         <tr>
-            <td>{{candidate.name}}</td>
-            <td>{{candidate.fit_score}}/100</td>
-            <td>{{candidate.rationale}}</td>
+            <td>{{signal.title}}</td>
+            <td>{{signal.relevance_score}}/100</td>
+            <td>{{signal.summary}}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -233,10 +233,10 @@ renderer = TemplateRenderer(template_dir="templates/")
 
 # Render to HTML
 html = renderer.render(
-    template="audit_report_v2.html",
+    template="weekly_brief_v2.html",
     data={
-        "report_title": "CARTA Audit — Distributed Oxide Lens",
-        "client_name": "Lumentum Operations LLC",
+        "report_title": "Weekly Brief — Electric Vehicle Market",
+        "client_name": "Acme Ventures",
         "scores": {"overall_score": 72, "dimensions": {...}},
         ...
     }
@@ -305,7 +305,7 @@ sample_data = {
         {"title": "Finding 1", "detail": "..."},
         {"title": "Finding 2", "detail": "..."},
     ],
-    "recommendation": "Proceed with licensing",
+    "recommendation": "Monitor closely — high competitive impact",
 }
 
 html = renderer.render("my_report.html", sample_data)

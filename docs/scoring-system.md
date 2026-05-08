@@ -1,6 +1,6 @@
 # Scoring System
 
-The scoring system is KAZI OS's evaluation engine. It provides a configurable, multi-dimensional framework for assessing any kind of item — patents, funding opportunities, content topics, candidates — against domain-specific rubrics.
+The scoring system is KAZI OS's evaluation engine. It provides a configurable, multi-dimensional framework for assessing any kind of item — market signals, competitor moves, content topics, candidates — against domain-specific rubrics.
 
 ---
 
@@ -56,15 +56,15 @@ dimensions:
       60-80: Near-production, clear path to deployment
       80-100: Production-ready, immediate deployment possible
 
-  - name: licensing_potential
+  - name: urgency
     weight: 0.15
-    description: "Likelihood of finding willing licensees"
+    description: "Time-sensitivity of the signal — how soon must we act?"
     scoring_guide: |
-      0-20: No identifiable licensees
-      20-40: Few potential licensees, uncertain interest
-      40-60: Several potential licensees identified
-      60-80: Active market demand, multiple interested parties
-      80-100: Licensees actively seeking this technology
+      0-20: No time pressure, background trend
+      20-40: Low urgency, worth noting for next quarter
+      40-60: Moderate urgency, address within 2-4 weeks
+      60-80: High urgency, competitive window closing
+      80-100: Critical — immediate action required
 
   - name: strategic_alignment
     weight: 0.15
@@ -122,7 +122,7 @@ overall = Σ (dimension_score × dimension_weight)
 For the example above:
 ```
 overall = (market × 0.25) + (competitive × 0.25) + (readiness × 0.20) 
-        + (licensing × 0.15) + (strategic × 0.15)
+        + (urgency × 0.15) + (strategic × 0.15)
 ```
 
 All weights must sum to 1.0. The platform validates this at startup.
@@ -237,7 +237,7 @@ dimension_scores = {
     "market_size": 75,
     "competitive_advantage": 60,
     "implementation_readiness": 80,
-    "licensing_potential": 55,
+    "urgency": 55,
     "strategic_alignment": 70,
 }
 
@@ -353,13 +353,13 @@ from kazi.scoring import DriftDetector
 detector = DriftDetector(threshold=15)  # Alert if score changes by >15 points
 
 current_score = 72
-historical_score = await score_store.get_latest(item_id="patent_123")
+historical_score = await score_store.get_latest(item_id="signal_ev_2024_q3")
 
 if detector.has_drifted(current_score, historical_score):
     # Trigger re-evaluation or alert
     await alert_dispatcher.notify(
         message=f"Score drifted: {historical_score} → {current_score}",
-        item_id="patent_123",
+        item_id="signal_ev_2024_q3",
     )
 ```
 
