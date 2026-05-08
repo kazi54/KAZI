@@ -91,9 +91,9 @@ See [`examples/`](./examples/) for working code:
 
 - [Getting Started](./docs/getting-started.md)
 - [Architecture](./docs/architecture.md)
-- [Design Patterns](./docs/patterns.md)
-- [Building Agents](./docs/agents.md)
-- [Scoring System](./docs/scoring.md)
+- [Design Patterns](./docs/design-patterns.md)
+- [Building Agents](./docs/building-agents.md)
+- [Scoring System](./docs/scoring-system.md)
 - [Templates](./docs/templates.md)
 - [Plugins](./docs/plugins.md)
 
