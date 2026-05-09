@@ -84,7 +84,8 @@ Each domain is a self-contained plugin with:
 
 ## Examples
 
-See [`examples/`](./examples/) for working code:
+See [`examples/`](./examples/) for working code and [Scenarios](./examples/README.md) for end-to-end product stories.
+
 - `hello_agent.py` — Your first agent in 10 lines
 - `scout_score_pipeline.py` — Two-agent pipeline with scoring
 - `weekly_brief.py` — Scheduled delivery with FanOut
