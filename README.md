@@ -79,7 +79,7 @@ Each domain is a self-contained plugin with:
 | `Pipeline` | Sequential chain — output of agent N feeds input of agent N+1 |
 | `FanOut` | Parallel execution — same pipeline across N inputs |
 | `Orchestrator` | Coordinator — dispatches jobs, manages triggers |
-| `ScoreLegend` | Configurable scoring tiers (e.g., 0-40 = Abandon, 80-100 = Fast-track) |
+| `ScoreLegend` | Configurable scoring tiers (e.g., 0-40 = Noise, 40-60 = Monitor, 60-80 = Act, 80-100 = Urgent) |
 | `ReviewQueue` | Human-in-the-loop — queue outputs for approval before delivery |
 
 ## Examples
