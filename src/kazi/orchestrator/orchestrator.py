@@ -22,8 +22,9 @@ class Trigger:
     """Base trigger definition."""
 
     name: str
-    trigger_type: TriggerType= TriggerType.ON_DEMAND
     pipeline_name: str
+    trigger_type: TriggerType= TriggerType.ON_DEMAND
+    
 
 
 @dataclass
