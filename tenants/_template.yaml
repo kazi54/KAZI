@@ -1,0 +1,66 @@
+# Tenant Configuration Template
+# Copy this file and customize for each client/tenant.
+#
+# KAZI OS is CRM-agnostic. Destinations are adapters.
+# The tenant declares which adapters they use and provides credentials.
+
+# ─── Identity ─────────────────────────────────────────────────────────────────
+org_id: my-org                    # Unique ID — used in AgentContext, logs, DB scoping
+name: My Organization             # Human-readable name
+domain: content                   # Which domain plugin this tenant uses
+
+# ─── Destinations ─────────────────────────────────────────────────────────────
+# Where pipeline outputs get pushed. KAZI OS routes to these via adapters.
+# Each key is a logical name referenced by HumanCheckpoint.destination in pipelines.
+#
+# Available adapters: notion, webhook, email
+# (add more by registering with DestinationRegistry)
+
+destinations:
+  # Where drafts go for human review
+  review:
+    adapter: notion               # or: salesforce, airtable, webhook, email
+    config:
+      database_id: "your-notion-database-id"
+      token: "${NOTION_TOKEN}"    # Resolved from environment variable
+      status_property: "Status"   # Property name to check for approval
+
+  # Where approved content gets published
+  publish:
+    adapter: webhook
+    config:
+      url: "https://api.beehiiv.com/v2/publications/..."
+      headers:
+        Authorization: "Bearer ${BEEHIIV_API_KEY}"
+
+  # Where notifications go
+  notify:
+    adapter: webhook
+    config:
+      url: "${SLACK_WEBHOOK_URL}"
+
+# ─── Secrets ──────────────────────────────────────────────────────────────────
+# Secret values resolved from environment variables at load time.
+# Use ${VAR_NAME} syntax. These are available via tenant.get_secret("key").
+
+secrets:
+  notion_token: "${NOTION_TOKEN}"
+  beehiiv_key: "${BEEHIIV_API_KEY}"
+  openai_key: "${OPENAI_API_KEY}"
+
+# ─── Preferences ──────────────────────────────────────────────────────────────
+# Tenant-specific preferences that influence pipeline behavior.
+
+preferences:
+  schedule: "0 6 * * 1"           # When scheduled pipelines run (cron)
+  delivery_format: [html, pdf]    # Preferred output formats
+  timezone: "America/New_York"
+  max_concurrent_jobs: 3
+
+# ─── Metadata ─────────────────────────────────────────────────────────────────
+# Any additional context about this tenant.
+
+metadata:
+  industry: "technology"
+  signed_up: "2026-05-01"
+  plan: "pro"

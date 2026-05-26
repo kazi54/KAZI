@@ -1,16 +1,69 @@
-# Domain Plugin Manifest
+# Domain Plugin Manifest (v2)
 # Copy this directory and customize for your domain.
+#
+# This manifest is the single source of truth for a domain's configuration.
+# The plugin loader reads it to:
+#   1. Discover and register agents
+#   2. Build and register pipelines
+#   3. Mount API routes
+#   4. Register dashboard pages
+#   5. Wire HITL checkpoints
 
-name: my-domain
-display_name: My Domain
-version: 0.1.0
-description: A brief description of what this domain does
+# ─── Domain Identity ──────────────────────────────────────────────────────────
+domain:
+  name: my-domain
+  display_name: My Domain
+  version: 0.1.0
+  description: A brief description of what this domain does
+  author: Your Name
 
-# API routes will be mounted at this prefix
-routes_prefix: /api/my-domain
+# ─── Pipelines ────────────────────────────────────────────────────────────────
+# Define the agent chains that produce deliverables.
+# Each pipeline is a sequence of stages (agents) with optional HITL checkpoints.
 
-# Dashboard pages (auto-registered in the frontend router)
-dashboard_pages:
-  - id: my-domain-home
-    path: /my-domain
-    component: MyDomainDashboard
+pipelines:
+  main:
+    description: "Primary pipeline for this domain"
+    stages:
+      - agent: my_scout
+        required: true
+      - agent: my_scorer
+        required: true
+      - agent: my_compiler
+        required: true
+    trigger:
+      type: on_demand                # on_demand | scheduled | event
+    delivery:
+      template: report_v1.html
+      format: [html]
+
+# ─── HITL (Human-in-the-Loop) ─────────────────────────────────────────────────
+# Where human review is required in the pipeline.
+
+hitl:
+  destination: review                # Maps to tenant.yaml destinations key
+  after_stages:                      # Which agents trigger a review pause
+    - my_compiler
+  timeout_hours: 72
+
+# ─── Routes ───────────────────────────────────────────────────────────────────
+# API routes are auto-mounted at this prefix.
+
+routes:
+  prefix: /my-domain
+  module: routes
+
+# ─── Dashboard ────────────────────────────────────────────────────────────────
+# Frontend pages auto-registered in the React shell.
+
+dashboard:
+  pages:
+    - id: home
+      title: Home
+      path: /my-domain
+      component: MyDomainDashboard
+
+# ─── Scoring ──────────────────────────────────────────────────────────────────
+# Reference to the scoring configuration file.
+
+scoring: scoring.yaml

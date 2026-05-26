@@ -1,0 +1,56 @@
+# Silicon Xchange — First external tenant on KAZI Insights (content domain)
+#
+# Silicon Xchange builds routing infrastructure connecting Silicon Valley and Africa.
+# Their media arm tells stories for the global capital community.
+# They use Notion for content review and Beehiiv for distribution.
+
+org_id: silicon-xchange
+name: Silicon Xchange
+domain: content
+
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${SX_NOTION_DATABASE_ID}"
+      token: "${SX_NOTION_TOKEN}"
+      status_property: "Status"
+
+  publish:
+    adapter: webhook
+    config:
+      url: "https://api.beehiiv.com/v2/publications/${SX_BEEHIIV_PUB_ID}/posts"
+      headers:
+        Authorization: "Bearer ${SX_BEEHIIV_KEY}"
+        Content-Type: "application/json"
+
+  notify:
+    adapter: webhook
+    config:
+      url: "${SX_SLACK_WEBHOOK}"
+
+secrets:
+  notion_token: "${SX_NOTION_TOKEN}"
+  beehiiv_key: "${SX_BEEHIIV_KEY}"
+  openai_key: "${OPENAI_API_KEY}"
+
+preferences:
+  schedule: "0 7 * * 1,4"        # Monday + Thursday at 7 AM
+  delivery_format: [html]
+  timezone: "Africa/Nairobi"
+  max_concurrent_jobs: 2
+  topics:
+    - venture capital Africa
+    - Silicon Valley Africa corridor
+    - African startup ecosystem
+    - global capital markets
+  voice_notes: |
+    Professional but accessible. Speaks to serious investors and operators.
+    Avoids hype. Data-driven. Pan-African perspective with global context.
+
+metadata:
+  industry: "media / venture capital"
+  signed_up: "2026-06-01"
+  plan: "pro"
+  contact: "team@siliconxchange.com"
+  linkedin: "https://linkedin.com/company/silicon-xchange"
