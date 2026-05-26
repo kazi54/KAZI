@@ -1,0 +1,211 @@
+---
+title: Scoring System
+description: "Define multi-dimensional scoring rubrics for automated evaluation."
+---
+
+# Scoring System
+
+The scoring system is how KAZI OS encodes your methodology as math. It defines what you evaluate, how you weight each dimension, and what thresholds determine action.
+
+## Schema
+
+```yaml scoring.yaml
+# ─── Dimensions ───────────────────────────────────────────
+dimensions:
+  - name: string          # Unique dimension name (lowercase, underscores)
+    weight: float         # Weight (0.0–1.0, all weights must sum to 1.0)
+    description: string   # What this dimension measures
+    scale: [int, int]     # Min and max values (e.g., [1, 10])
+
+# ─── Tiers ────────────────────────────────────────────────
+tiers:
+  - name: string          # Tier name (e.g., "publish", "revise", "discard")
+    min_score: float      # Minimum total score for this tier
+    action: string        # What happens at this tier
+    color: string         # Optional. Display color (hex)
+
+# ─── Legend ───────────────────────────────────────────────
+legend:
+  <score_value>: string   # Human-readable meaning for each score point
+```
+
+## Full Example
+
+```yaml scoring.yaml
+dimensions:
+  - name: relevance
+    weight: 0.30
+    description: "How relevant is this to the target audience and stated niche?"
+    scale: [1, 10]
+
+  - name: novelty
+    weight: 0.25
+    description: "Does this introduce new information, perspective, or framing?"
+    scale: [1, 10]
+
+  - name: authority
+    weight: 0.25
+    description: "Is the source credible? Is the claim verifiable?"
+    scale: [1, 10]
+
+  - name: actionability
+    weight: 0.20
+    description: "Can the audience do something concrete with this information?"
+    scale: [1, 10]
+
+tiers:
+  - name: publish
+    min_score: 7.5
+    action: "Proceed to compilation and delivery"
+    color: "#4ade80"
+
+  - name: revise
+    min_score: 5.5
+    action: "Flag for human review at checkpoint"
+    color: "#fbbf24"
+
+  - name: rethink
+    min_score: 3.5
+    action: "Return to research with modified parameters"
+    color: "#fb923c"
+
+  - name: discard
+    min_score: 0.0
+    action: "Drop from pipeline, log reason"
+    color: "#ef4444"
+
+legend:
+  10: "Exceptional — best-in-class for this dimension"
+  9: "Excellent — clearly above average"
+  8: "Strong — meets high standards"
+  7: "Good — meets baseline expectations"
+  6: "Adequate — acceptable but not notable"
+  5: "Marginal — borderline, needs improvement"
+  4: "Weak — below expectations"
+  3: "Poor — significant gaps"
+  2: "Very poor — fundamental issues"
+  1: "Unacceptable — does not meet minimum criteria"
+```
+
+## Calculation
+
+The total score is a weighted sum:
+
+```
+total = Σ (dimension_score × dimension_weight)
+```
+
+For the example above with scores `relevance=8, novelty=7, authority=9, actionability=6`:
+
+```
+total = (8 × 0.30) + (7 × 0.25) + (9 × 0.25) + (6 × 0.20)
+      = 2.4 + 1.75 + 2.25 + 1.2
+      = 7.6
+```
+
+Tier: **publish** (7.6 ≥ 7.5)
+
+## Using the Scoring System in Agents
+
+```python
+from kazi.scoring.dimensions import ScoringSystem
+
+class ContentScorer(BaseAgent):
+    name = "scorer"
+    agent_type = "evaluation"
+
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        # Load scoring system
+        system = ScoringSystem.from_yaml(self.config["scoring_file"])
+
+        scored_items = []
+        for item in input.payload["findings"]:
+            # Score each dimension (your evaluation logic)
+            scores = {}
+            for dim in system.dimensions:
+                scores[dim.name] = await self.evaluate_dimension(item, dim)
+
+            # Calculate total and classify
+            total = system.calculate(scores)
+            tier = system.classify(total)
+
+            scored_items.append({
+                **item,
+                "score": {
+                    "dimensions": scores,
+                    "total": total,
+                    "tier": tier.name,
+                    "action": tier.action
+                }
+            })
+
+        return AgentOutput(
+            status="success",
+            payload={"scored_findings": scored_items},
+            metadata={
+                "total_scored": len(scored_items),
+                "tier_distribution": self.count_tiers(scored_items)
+            }
+        )
+```
+
+## Validation Rules
+
+KAZI OS validates `scoring.yaml` at load time:
+
+- All dimension weights must sum to exactly 1.0
+- Scale must be `[min, max]` where min < max
+- Tiers must be ordered by `min_score` descending (highest first)
+- Tier coverage must be complete (lowest tier must have `min_score: 0.0`)
+- Dimension names must be unique
+
+```bash
+kazi validate scoring.yaml
+```
+
+## Methodology Versioning
+
+When you change your scoring rubrics, the change propagates to all future runs:
+
+```yaml
+# scoring.yaml — v2 (added "timeliness" dimension)
+dimensions:
+  - name: relevance
+    weight: 0.25       # Reduced from 0.30
+  - name: novelty
+    weight: 0.20       # Reduced from 0.25
+  - name: authority
+    weight: 0.25       # Unchanged
+  - name: actionability
+    weight: 0.15       # Reduced from 0.20
+  - name: timeliness   # NEW
+    weight: 0.15
+    description: "How time-sensitive is this? Will it still be relevant next week?"
+    scale: [1, 10]
+```
+
+Previous reports retain their original scores. New runs use the updated methodology. The version is tracked in report metadata.
+
+## Score Output Format
+
+Every scored item produces this structure:
+
+```json
+{
+  "score": {
+    "dimensions": {
+      "relevance": 8,
+      "novelty": 7,
+      "authority": 9,
+      "actionability": 6
+    },
+    "total": 7.6,
+    "tier": "publish",
+    "action": "Proceed to compilation and delivery",
+    "methodology_version": "2.1",
+    "scored_at": "2026-05-26T07:14:22Z"
+  }
+}
+```
+
+This structure is available in templates for rendering.

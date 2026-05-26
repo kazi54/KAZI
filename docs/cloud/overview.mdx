@@ -1,0 +1,138 @@
+---
+title: Cloud Overview
+description: "Deploy your workflows across clients, teams, and systems."
+---
+
+# Cloud
+
+Cloud is the multi-tenancy layer of KAZI OS. It lets you run the same workflow for multiple clients without changing pipeline code. Each client gets isolated config, scoped secrets, and CRM-agnostic delivery.
+
+## The Model
+
+```
+One domain manifest + Many tenant configs = Multi-client product
+```
+
+You build the pipeline once. Each client is a YAML file. KAZI OS handles isolation, routing, and scheduling per tenant.
+
+## Key Concepts
+
+| Concept | What it is | Where it lives |
+|---------|-----------|----------------|
+| **Tenant** | A client configuration (org_id, destinations, secrets, preferences) | `tenants/*.yaml` |
+| **Destination** | A typed output target (Notion, Salesforce, webhook, email) | Declared in tenant config |
+| **Adapter** | Implementation that pushes to a specific platform | `kazi/delivery/destinations.py` |
+| **Isolation** | Scoping of secrets, logs, data, and destinations per tenant | Built into the platform |
+| **Scheduling** | Per-tenant cron schedules with timezone support | Declared in tenant preferences |
+
+## How It Works
+
+### 1. You build a domain (once)
+
+```yaml
+# domains/content/manifest.yaml
+domain: content-production
+pipelines:
+  produce:
+    stages:
+      - agent: scout
+      - agent: scorer
+      - checkpoint: review
+        destination: review
+      - agent: compiler
+```
+
+### 2. You add tenants (per client)
+
+```yaml
+# tenants/silicon-xchange.yaml
+org_id: silicon-xchange
+name: Silicon Xchange
+domain: content-production
+
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${SX_NOTION_DB}"
+      token: "${SX_NOTION_TOKEN}"
+```
+
+```yaml
+# tenants/acme-ventures.yaml
+org_id: acme-ventures
+name: Acme Ventures
+domain: content-production
+
+destinations:
+  review:
+    adapter: salesforce
+    config:
+      instance_url: "${ACME_SF_URL}"
+      object_type: "ContentReview__c"
+      token: "${ACME_SF_TOKEN}"
+```
+
+### 3. You run scoped to each tenant
+
+```bash
+kazi run produce --tenant silicon-xchange
+# → Outputs go to Silicon Xchange's Notion
+
+kazi run produce --tenant acme-ventures
+# → Outputs go to Acme's Salesforce
+```
+
+Same pipeline. Different clients. Different CRMs. Zero code changes.
+
+## What Gets Isolated
+
+| Layer | Shared | Isolated per tenant |
+|-------|--------|---------------------|
+| **Code** | Agent implementations, pipeline logic, scoring rubrics | — |
+| **Config** | Manifest structure | Destinations, preferences, schedule |
+| **Secrets** | — | API keys, tokens, credentials |
+| **Data** | — | Pipeline outputs, logs, reports |
+| **Scheduling** | — | Cron expression, timezone |
+
+## CRM-Agnostic Delivery
+
+KAZI OS does not know what a CRM is. It knows what a **destination** is. Tenants declare which adapter handles each logical destination key:
+
+```
+Pipeline says: "push to review"
+    ↓
+Tenant A config says: review → Notion
+Tenant B config says: review → Salesforce
+Tenant C config says: review → webhook
+```
+
+The pipeline never references a platform name. It references a logical key. The tenant config resolves that key to an adapter.
+
+## Scaling
+
+Adding a client does not require:
+- New code
+- New deployments
+- New infrastructure
+- New pipeline definitions
+
+It requires:
+- One YAML file (`tenants/new-client.yaml`)
+- Environment variables for their secrets
+
+```bash
+kazi tenant add new-client --domain content-production
+# Creates tenants/new-client.yaml from template
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tenant Config" icon="user" href="/cloud/tenants">
+    Full tenant.yaml specification.
+  </Card>
+  <Card title="Destinations" icon="arrow-right-from-bracket" href="/cloud/destinations">
+    Built-in adapters and how to write custom ones.
+  </Card>
+</CardGroup>

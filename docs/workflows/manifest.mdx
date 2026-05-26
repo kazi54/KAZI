@@ -1,0 +1,256 @@
+---
+title: Manifest Reference
+description: "Complete specification for manifest.yaml — the domain blueprint."
+---
+
+# Manifest Reference
+
+The manifest is the single source of truth for your domain. It declares what agents exist, how they compose into pipelines, what triggers them, and where outputs go.
+
+## File Location
+
+```
+your-domain/
+└── manifest.yaml
+```
+
+## Full Schema
+
+```yaml manifest.yaml
+# ─── Identity ─────────────────────────────────────────────
+domain: string          # Required. Unique domain identifier (lowercase, hyphens)
+version: string         # Required. Semantic version (e.g., "1.0")
+description: string     # Optional. Human-readable description
+
+# ─── Agents ───────────────────────────────────────────────
+agents:
+  - name: string        # Required. Unique agent name (lowercase, underscores)
+    type: enum          # Required. One of: research, evaluation, synthesis, delivery
+    description: string # Required. What this agent does
+    config: object      # Optional. Agent-specific configuration
+
+# ─── Pipelines ────────────────────────────────────────────
+pipelines:
+  <pipeline_name>:
+    trigger: enum       # Required. One of: on_demand, scheduled, event
+    schedule: string    # Required if trigger=scheduled. Cron expression
+    event: string       # Required if trigger=event. Event name to listen for
+    stages:
+      - agent: string   # Agent name (must match agents[].name)
+        timeout: int    # Optional. Max seconds for this stage (default: 300)
+        retry: int      # Optional. Max retries on failure (default: 0)
+        backoff: float  # Optional. Backoff multiplier between retries (default: 2.0)
+
+      - checkpoint: string      # Checkpoint name
+        destination: string     # Destination key (must match destinations{})
+        config: object          # Optional. Checkpoint-specific config
+
+      - fan_out:                # Parallel execution block
+          agents: [string]      # List of agent names to run in parallel
+          concurrency: int      # Optional. Max parallel executions (default: 3)
+
+# ─── Destinations ─────────────────────────────────────────
+destinations:
+  <destination_key>:
+    adapter: string     # Required. Adapter name (notion, webhook, email, or custom)
+    config: object      # Required. Adapter-specific configuration
+
+# ─── Scoring ──────────────────────────────────────────────
+scoring:
+  file: string          # Path to scoring.yaml (default: "scoring.yaml")
+
+# ─── Routes ───────────────────────────────────────────────
+routes:
+  file: string          # Path to routes.py (default: "routes.py")
+
+# ─── Dashboard ────────────────────────────────────────────
+dashboard:
+  pages:
+    - id: string        # Page identifier
+      title: string     # Display title
+      template: string  # Template file path
+```
+
+## Agent Types
+
+| Type | Purpose | Input | Output |
+|------|---------|-------|--------|
+| `research` | Gather information from sources | Topic, query, or context | Findings, raw data |
+| `evaluation` | Score or assess inputs against criteria | Findings or content | Scores, ratings, recommendations |
+| `synthesis` | Produce structured output from scored inputs | Scored findings | Reports, articles, deliverables |
+| `delivery` | Push outputs to external systems | Compiled output | Delivery receipts |
+
+## Agent Config
+
+Agent config is passed to the agent at initialization. It is domain-specific:
+
+```yaml
+agents:
+  - name: scout
+    type: research
+    description: "Find topics from RSS and web sources"
+    config:
+      sources:
+        - type: rss
+          url: "https://example.com/feed"
+          max_items: 20
+        - type: web
+          query_template: "{{domain}} latest news"
+          max_results: 10
+      filters:
+        min_relevance: 0.7
+        exclude_domains:
+          - spam.com
+```
+
+## Pipeline Stages
+
+### Agent Stage
+
+```yaml
+- agent: scorer
+  timeout: 120        # Fail after 2 minutes
+  retry: 2            # Retry up to 2 times
+  backoff: 3.0        # Wait 3s, then 9s between retries
+```
+
+### Checkpoint Stage
+
+```yaml
+- checkpoint: editorial_review
+  destination: review
+  config:
+    queue: "drafts"
+    priority: "high"
+    notify: true
+```
+
+When a pipeline hits a checkpoint:
+1. Execution pauses
+2. Current state is pushed to the configured destination
+3. Pipeline waits for external resolution (approve/reject)
+4. On approval, execution resumes from the next stage
+
+### Fan-Out Stage
+
+```yaml
+- fan_out:
+    agents: [scorer_a, scorer_b, scorer_c]
+    concurrency: 2    # Run at most 2 at a time
+```
+
+All agents in a fan-out receive the same input. Results are collected into an array before the next stage.
+
+## Destinations
+
+Destinations are logical output targets. They map to adapters:
+
+```yaml
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${NOTION_DB_ID}"
+      token: "${NOTION_TOKEN}"
+
+  publish:
+    adapter: webhook
+    config:
+      url: "https://api.beehiiv.com/v2/publications/..."
+      headers:
+        Authorization: "Bearer ${BEEHIIV_API_KEY}"
+
+  notify:
+    adapter: email
+    config:
+      to: "team@example.com"
+      subject: "Pipeline {{pipeline_name}} complete"
+```
+
+<Note>
+Secrets use `${ENV_VAR}` syntax. They resolve from environment variables at runtime — never stored in the manifest file.
+</Note>
+
+## Validation
+
+KAZI OS validates your manifest at load time:
+
+- All agent names in pipeline stages must exist in `agents[]`
+- All destination keys in checkpoints must exist in `destinations{}`
+- Trigger type must match required fields (schedule for `scheduled`, event for `event`)
+- Agent types must be one of the four valid types
+
+```bash
+kazi validate manifest.yaml
+```
+
+## Example: Content Production Domain
+
+```yaml
+domain: content-production
+version: "2.1"
+description: "Automated content pipeline for thought leaders"
+
+agents:
+  - name: scout
+    type: research
+    description: "Discover high-signal topics from configured sources"
+    config:
+      sources:
+        - type: rss
+          url: "https://news.ycombinator.com/rss"
+        - type: web
+          query_template: "{{niche}} emerging trends 2026"
+
+  - name: scorer
+    type: evaluation
+    description: "Score topics against editorial rubrics"
+    config:
+      scoring_file: scoring.yaml
+      min_score: 6.0
+
+  - name: writer
+    type: synthesis
+    description: "Produce publication-ready articles"
+    config:
+      template: templates/article_v1.html
+      max_length: 2000
+      voice_file: identity/voice.md
+
+  - name: distributor
+    type: delivery
+    description: "Push approved content to publishing channels"
+    config:
+      channels: [newsletter, social, blog]
+
+pipelines:
+  produce:
+    trigger: scheduled
+    schedule: "0 7 * * 1,4"
+    stages:
+      - agent: scout
+        timeout: 120
+      - agent: scorer
+      - checkpoint: editorial_review
+        destination: review
+        config:
+          queue: drafts
+      - agent: writer
+      - agent: distributor
+
+  research_only:
+    trigger: on_demand
+    stages:
+      - agent: scout
+        timeout: 180
+
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${NOTION_CONTENT_DB}"
+      token: "${NOTION_TOKEN}"
+
+scoring:
+  file: scoring.yaml
+```

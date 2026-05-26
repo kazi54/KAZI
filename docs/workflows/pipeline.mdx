@@ -1,0 +1,202 @@
+---
+title: Pipeline Execution
+description: "How pipelines run, pause, resume, and handle errors."
+---
+
+# Pipeline Execution
+
+A pipeline is a sequence of stages that execute in order. Each stage is either an agent execution, a human checkpoint, or a fan-out block.
+
+## Lifecycle
+
+```
+PENDING → RUNNING → [PAUSED] → COMPLETED
+                  ↘ FAILED
+```
+
+| State | Meaning |
+|-------|---------|
+| `PENDING` | Pipeline created, not yet started |
+| `RUNNING` | Actively executing stages |
+| `PAUSED` | Waiting at a HumanCheckpoint for approval |
+| `COMPLETED` | All stages finished successfully |
+| `FAILED` | A stage failed after exhausting retries |
+
+## Sequential Execution
+
+The default pattern. Each stage receives the output of the previous stage:
+
+```yaml
+pipelines:
+  analyze:
+    stages:
+      - agent: researcher     # Output: {findings: [...]}
+      - agent: scorer         # Input: {findings: [...]}, Output: {scored: [...]}
+      - agent: writer         # Input: {scored: [...]}, Output: {report: "..."}
+```
+
+```
+researcher → scorer → writer
+     ↓           ↓         ↓
+  findings    scored     report
+```
+
+## Human-in-the-Loop
+
+Checkpoints pause the pipeline and push current state to a destination:
+
+```yaml
+stages:
+  - agent: scorer
+  - checkpoint: review
+    destination: review
+    config:
+      queue: drafts
+      priority: high
+  - agent: writer
+```
+
+When the pipeline hits `review`:
+
+1. Current payload is pushed to the `review` destination (e.g., Notion, email)
+2. Pipeline state is persisted
+3. Execution pauses
+4. External signal (CLI, API, webhook) resumes with `approve` or `reject`
+
+### Resuming
+
+```bash
+# Via CLI
+kazi resume analyze --run-id abc123 --approve
+
+# Via API
+POST /api/pipelines/analyze/runs/abc123/resume
+{"decision": "approve"}
+```
+
+### Rejection
+
+If rejected, the pipeline terminates with status `FAILED` and the rejection reason is logged:
+
+```bash
+kazi resume analyze --run-id abc123 --reject --reason "Scoring too low"
+```
+
+## Fan-Out (Parallel Execution)
+
+Run multiple agents simultaneously with a concurrency limit:
+
+```yaml
+stages:
+  - agent: researcher
+  - fan_out:
+      agents: [scorer_relevance, scorer_novelty, scorer_authority]
+      concurrency: 2
+  - agent: writer
+```
+
+```
+researcher → ┌─ scorer_relevance ─┐
+             ├─ scorer_novelty ───┤ → writer
+             └─ scorer_authority ─┘
+```
+
+All fan-out agents receive the same input. Their outputs are collected into an array:
+
+```python
+# Input to writer after fan-out:
+{
+    "fan_out_results": [
+        {"agent": "scorer_relevance", "output": {...}},
+        {"agent": "scorer_novelty", "output": {...}},
+        {"agent": "scorer_authority", "output": {...}}
+    ]
+}
+```
+
+## Error Handling
+
+### Retry with Backoff
+
+```yaml
+- agent: external_api_agent
+  timeout: 60
+  retry: 3
+  backoff: 2.0    # Wait 2s, 4s, 8s between retries
+```
+
+### Timeout
+
+If an agent exceeds its timeout, it is terminated and treated as a failure:
+
+```
+[KAZI] ├─ external_api_agent ... ✗ TIMEOUT (60s exceeded)
+[KAZI] │  Retry 1/3 (waiting 2.0s)...
+[KAZI] ├─ external_api_agent ... ✓ 34.2s
+```
+
+### Pipeline Failure
+
+If a stage fails after all retries are exhausted:
+
+1. Pipeline status becomes `FAILED`
+2. Error details are logged with full context
+3. Subsequent stages do not execute
+4. The run can be retried from the failed stage:
+
+```bash
+kazi retry analyze --run-id abc123 --from-stage 2
+```
+
+## Pipeline Context
+
+Every stage has access to the pipeline context:
+
+```python
+class PipelineContext:
+    run_id: str             # Unique run identifier
+    pipeline_name: str      # Pipeline name from manifest
+    org_id: str             # Tenant (from tenant.yaml or CLI)
+    started_at: datetime    # When the run started
+    stage_results: list     # Results from all previous stages
+    config: dict            # Pipeline-level config
+```
+
+## Observability
+
+Every pipeline run produces structured logs:
+
+```json
+{
+  "run_id": "run_2026-05-26_abc123",
+  "pipeline": "produce",
+  "org_id": "silicon-xchange",
+  "stages": [
+    {"name": "scout", "status": "success", "duration_ms": 12340, "metadata": {"finding_count": 15}},
+    {"name": "scorer", "status": "success", "duration_ms": 4100, "metadata": {"passed": 4}},
+    {"name": "review", "status": "approved", "duration_ms": 3600000, "approved_by": "editor@sx.com"},
+    {"name": "compiler", "status": "success", "duration_ms": 6200, "metadata": {"word_count": 1847}}
+  ],
+  "total_duration_ms": 3622640,
+  "status": "completed"
+}
+```
+
+## Programmatic Usage
+
+```python
+from kazi.orchestrator.builder import PipelineBuilder
+from kazi.agents.registry import AgentRegistry
+
+# Build from manifest
+registry = AgentRegistry()
+registry.discover("domains/content/agents")
+
+builder = PipelineBuilder(manifest, registry)
+pipeline = builder.build("produce")
+
+# Run with context
+result = await pipeline.run(context={"org_id": "silicon-xchange", "input": {"topic": "AI"}})
+print(result.status)  # "completed"
+print(result.output)  # Final stage output
+```

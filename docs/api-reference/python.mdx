@@ -1,0 +1,272 @@
+---
+title: Python API
+description: "Programmatic interface for embedding KAZI OS in your applications."
+---
+
+# Python API
+
+Use the Python API to embed KAZI OS in your own applications, scripts, or services.
+
+## Installation
+
+```bash
+pip install kazi-os
+```
+
+## Core Modules
+
+### Loading a Domain
+
+```python
+from kazi.api.plugin_loader import load_domain
+
+domain = load_domain("domains/content-production")
+# Returns: DomainContext with manifest, agents, pipelines, scoring
+```
+
+### Agent Registry
+
+```python
+from kazi.agents.registry import AgentRegistry
+
+registry = AgentRegistry()
+registry.discover("domains/content-production/agents")
+
+# Get an agent by name
+scout = registry.get("scout")
+
+# List all registered agents
+for name, agent_class in registry.all():
+    print(f"{name}: {agent_class.agent_type}")
+```
+
+### Building Pipelines
+
+```python
+from kazi.orchestrator.builder import PipelineBuilder
+
+builder = PipelineBuilder(manifest=domain.manifest, registry=registry)
+
+# Build a specific pipeline
+pipeline = builder.build("produce")
+
+# Build all pipelines from manifest
+pipelines = builder.build_all()
+```
+
+### Running a Pipeline
+
+```python
+from kazi.orchestrator.pipeline import PipelineContext
+
+context = PipelineContext(
+    org_id="silicon-xchange",
+    run_id="run_2026-05-26_001",
+    pipeline_name="produce",
+    input_payload={"topic": "AI infrastructure"}
+)
+
+result = await pipeline.run(context)
+
+print(result.status)       # "completed" | "paused" | "failed"
+print(result.output)       # Final stage output payload
+print(result.duration_ms)  # Total execution time
+print(result.stages)       # Per-stage results
+```
+
+### Tenant Management
+
+```python
+from kazi.platform.tenant import TenantConfig, load_tenant, load_all_tenants
+
+# Load a single tenant
+tenant = load_tenant("tenants/silicon-xchange.yaml")
+print(tenant.org_id)           # "silicon-xchange"
+print(tenant.destinations)     # Resolved destination configs
+
+# Load all tenants
+tenants = load_all_tenants("tenants/")
+for t in tenants:
+    print(f"{t.org_id}: {t.domain}")
+```
+
+### Destination Registry
+
+```python
+from kazi.delivery.destinations import DestinationRegistry, BaseDestination
+
+registry = DestinationRegistry()
+
+# Register a custom adapter
+registry.register("salesforce", SalesforceDestination)
+
+# Resolve and push
+adapter = registry.get("notion")
+receipt = await adapter.push(
+    payload={"title": "Weekly Report", "content": "..."},
+    config=tenant.destinations["review"]["config"],
+    context={"org_id": "silicon-xchange", "run_id": "run_001"}
+)
+
+print(receipt.receipt_id)   # "page_abc123"
+print(receipt.status)       # "delivered"
+```
+
+### Scoring System
+
+```python
+from kazi.scoring.dimensions import ScoringSystem
+
+system = ScoringSystem.from_yaml("scoring.yaml")
+
+# Calculate a score
+scores = {
+    "relevance": 8,
+    "novelty": 7,
+    "authority": 9,
+    "actionability": 6
+}
+
+total = system.calculate(scores)    # 7.6
+tier = system.classify(total)       # Tier(name="publish", action="Proceed to...")
+
+# Access dimensions
+for dim in system.dimensions:
+    print(f"{dim.name}: weight={dim.weight}, scale={dim.scale}")
+```
+
+### Orchestrator
+
+```python
+from kazi.orchestrator.orchestrator import Orchestrator, Job, Trigger
+
+orchestrator = Orchestrator()
+
+# Register a pipeline with a trigger
+orchestrator.register(
+    pipeline=pipeline,
+    trigger=Trigger(type="scheduled", schedule="0 7 * * 1,4")
+)
+
+# Dispatch a job manually
+job = Job(
+    pipeline_name="produce",
+    org_id="silicon-xchange",
+    input_payload={"topic": "emerging tech"}
+)
+
+result = await orchestrator.dispatch(job)
+```
+
+## Full Example: Multi-Tenant Execution
+
+```python
+import asyncio
+from kazi.api.plugin_loader import load_platform
+
+async def main():
+    # Load everything
+    platform = load_platform(
+        domains_dir="domains/",
+        tenants_dir="tenants/"
+    )
+
+    # Run a pipeline for all tenants on a domain
+    results = []
+    for tenant in platform.tenants_for_domain("content-production"):
+        result = await platform.run(
+            pipeline="produce",
+            tenant=tenant,
+            input={"date": "2026-05-26"}
+        )
+        results.append((tenant.org_id, result.status))
+
+    for org_id, status in results:
+        print(f"{org_id}: {status}")
+
+asyncio.run(main())
+```
+
+Output:
+
+```
+silicon-xchange: completed
+acme-ventures: paused (checkpoint: review)
+kazi54: completed
+```
+
+## Event Handling
+
+```python
+from kazi.orchestrator.orchestrator import EventBus
+
+bus = EventBus()
+
+# Register event-driven pipelines
+bus.register("patent.filed", pipeline=patent_pipeline, filter={"value_gte": 1000000})
+
+# Emit an event
+await bus.emit("patent.filed", data={"patent_id": "US-2026-001234", "value": 2500000})
+# → Triggers patent_pipeline automatically
+```
+
+## Error Handling
+
+```python
+from kazi.orchestrator.pipeline import PipelineError, StageError
+
+try:
+    result = await pipeline.run(context)
+except StageError as e:
+    print(f"Stage '{e.stage_name}' failed: {e.message}")
+    print(f"Retries exhausted: {e.retries_attempted}/{e.max_retries}")
+except PipelineError as e:
+    print(f"Pipeline error: {e.message}")
+```
+
+## Type Reference
+
+### AgentInput
+
+```python
+@dataclass
+class AgentInput:
+    payload: dict           # Data from previous stage
+    context: AgentContext   # Pipeline context
+    config: dict            # Agent config from manifest
+```
+
+### AgentOutput
+
+```python
+@dataclass
+class AgentOutput:
+    status: str             # "success" | "failure" | "partial"
+    payload: dict           # Data for next stage
+    metadata: dict          # Diagnostics (not passed downstream)
+    errors: list[str]       # Error messages
+```
+
+### PipelineResult
+
+```python
+@dataclass
+class PipelineResult:
+    status: str             # "completed" | "paused" | "failed"
+    output: dict            # Final stage payload
+    duration_ms: int        # Total execution time
+    stages: list[StageResult]  # Per-stage results
+    run_id: str             # Unique run identifier
+```
+
+### DestinationReceipt
+
+```python
+@dataclass
+class DestinationReceipt:
+    destination: str        # Adapter name
+    receipt_id: str         # Tracking ID
+    status: str             # "delivered" | "pending" | "failed"
+    timestamp: datetime     # When pushed
+    metadata: dict          # Adapter-specific data
+```

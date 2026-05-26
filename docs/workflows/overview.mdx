@@ -1,0 +1,108 @@
+---
+title: Workflows Overview
+description: "Build repeatable agentic workflows from your domain blueprint."
+---
+
+# Workflows
+
+Workflows are the execution backbone of KAZI OS. A workflow defines **what agents run, in what order, with what checkpoints** — all from a YAML manifest.
+
+## The Model
+
+```
+manifest.yaml → PipelineBuilder → Pipeline → Orchestrator → Execution
+```
+
+You do not write orchestration code. You declare your pipeline structure in the manifest, and KAZI OS builds the execution graph.
+
+## Key Concepts
+
+| Concept | What it is | Where it lives |
+|---------|-----------|----------------|
+| **Manifest** | Your domain definition — agents, pipelines, triggers, destinations | `manifest.yaml` |
+| **Agent** | A typed unit of work (research, evaluation, synthesis, delivery) | `agents/*.py` |
+| **Pipeline** | A sequence of stages (agents + checkpoints) | Declared in manifest, built by `PipelineBuilder` |
+| **Stage** | One step in a pipeline — either an agent execution or a human checkpoint | Part of pipeline definition |
+| **Trigger** | What starts a pipeline run (on-demand, scheduled, event-driven) | Declared in manifest |
+| **Checkpoint** | A pause point where a human reviews before the pipeline continues | Declared in pipeline stages |
+
+## How It Works
+
+### 1. You define agents in the manifest
+
+```yaml
+agents:
+  - name: scout
+    type: research
+    description: "Find high-signal topics"
+    config:
+      sources:
+        - type: rss
+          url: "https://example.com/feed"
+```
+
+### 2. You compose them into pipelines
+
+```yaml
+pipelines:
+  produce:
+    trigger: scheduled
+    schedule: "0 7 * * 1,4"
+    stages:
+      - agent: scout
+        timeout: 120
+      - agent: scorer
+      - checkpoint: review
+        destination: review
+      - agent: compiler
+```
+
+### 3. KAZI OS builds and runs the pipeline
+
+```python
+# This happens automatically — you never write this code
+from kazi.orchestrator.builder import PipelineBuilder
+
+builder = PipelineBuilder(manifest, agent_registry)
+pipeline = builder.build("produce")
+result = await pipeline.run(context)
+```
+
+## Execution Patterns
+
+KAZI OS supports three execution patterns:
+
+<CardGroup cols={3}>
+  <Card title="Sequential" icon="arrow-right">
+    Stages run one after another. Output of stage N becomes input of stage N+1.
+  </Card>
+  <Card title="Fan-Out" icon="arrows-split-up-and-left">
+    Run multiple agents in parallel with a concurrency limit. Collect all results.
+  </Card>
+  <Card title="Human-in-the-Loop" icon="user-check">
+    Pause the pipeline at a checkpoint. Resume after human approval.
+  </Card>
+</CardGroup>
+
+## What Workflows Are NOT
+
+- **Not a DAG engine** — Pipelines are linear with optional fan-out. If you need complex branching, use Temporal or Airflow.
+- **Not a chatbot framework** — Agents do not converse with each other. They execute typed tasks and pass structured output.
+- **Not a no-code tool** — You write agent logic in Python. The manifest handles orchestration, not implementation.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Manifest Reference" icon="book" href="/workflows/manifest">
+    Full specification for manifest.yaml.
+  </Card>
+  <Card title="Writing Agents" icon="robot" href="/workflows/agents">
+    The BaseAgent contract and how to implement it.
+  </Card>
+  <Card title="Pipeline Execution" icon="play" href="/workflows/pipeline">
+    How pipelines run, pause, resume, and handle errors.
+  </Card>
+  <Card title="Triggers" icon="clock" href="/workflows/triggers">
+    Scheduled, on-demand, and event-driven execution.
+  </Card>
+</CardGroup>

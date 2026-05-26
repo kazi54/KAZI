@@ -1,0 +1,302 @@
+---
+title: CLI Reference
+description: "Command-line interface for KAZI OS."
+---
+
+# CLI Reference
+
+The `kazi` CLI is the primary interface for managing domains, running pipelines, and operating tenants.
+
+## Installation
+
+```bash
+pip install kazi-os
+```
+
+Verify:
+
+```bash
+kazi --version
+```
+
+## Commands
+
+### `kazi init`
+
+Scaffold a new domain from the template:
+
+```bash
+kazi init <domain-name> [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--with-scoring` | Include scoring.yaml template | false |
+| `--with-routes` | Include routes.py for API endpoints | false |
+| `--template <path>` | Use a custom template directory | built-in |
+
+**Example:**
+
+```bash
+kazi init content-production --with-scoring
+```
+
+Creates:
+
+```
+content-production/
+├── manifest.yaml
+├── scoring.yaml
+├── agents/
+│   └── __init__.py
+├── templates/
+│   └── report_v1.html
+└── routes.py
+```
+
+---
+
+### `kazi run`
+
+Execute a pipeline:
+
+```bash
+kazi run <pipeline-name> [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--tenant <org_id>` | Run scoped to a specific tenant | none (runs unscoped) |
+| `--input <json>` | Initial input payload as JSON string | `{}` |
+| `--dry-run` | Validate pipeline without executing | false |
+| `--verbose` | Show detailed stage output | false |
+
+**Examples:**
+
+```bash
+# Run for a specific tenant
+kazi run produce --tenant silicon-xchange
+
+# Run with custom input
+kazi run research --input '{"topic": "quantum computing"}'
+
+# Dry run (validate only)
+kazi run produce --tenant acme --dry-run
+
+# Run for all tenants on this domain
+kazi run produce --all-tenants
+```
+
+---
+
+### `kazi resume`
+
+Resume a paused pipeline (at a HumanCheckpoint):
+
+```bash
+kazi resume <pipeline-name> --run-id <id> [--approve | --reject] [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--run-id <id>` | The run to resume (required) |
+| `--approve` | Approve the checkpoint |
+| `--reject` | Reject the checkpoint |
+| `--reason <text>` | Reason for rejection |
+
+**Examples:**
+
+```bash
+kazi resume produce --run-id run_abc123 --approve
+kazi resume produce --run-id run_abc123 --reject --reason "Score too low"
+```
+
+---
+
+### `kazi retry`
+
+Retry a failed pipeline from a specific stage:
+
+```bash
+kazi retry <pipeline-name> --run-id <id> [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--run-id <id>` | The failed run to retry | required |
+| `--from-stage <n>` | Stage index to restart from (0-indexed) | failed stage |
+
+**Example:**
+
+```bash
+kazi retry produce --run-id run_abc123 --from-stage 2
+```
+
+---
+
+### `kazi serve`
+
+Start the KAZI OS server (API + scheduler):
+
+```bash
+kazi serve [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--host <addr>` | Bind address | 0.0.0.0 |
+| `--port <n>` | Port number | 8000 |
+| `--workers <n>` | Number of workers | 1 |
+| `--reload` | Auto-reload on file changes | false |
+
+**Example:**
+
+```bash
+kazi serve --port 8000 --reload
+```
+
+---
+
+### `kazi schedule`
+
+Manage scheduled pipeline runs:
+
+```bash
+kazi schedule <subcommand>
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `start` | Start the scheduler (runs all tenant schedules) |
+| `list` | List all active schedules |
+| `pause <org_id>` | Pause a tenant's schedule |
+| `resume <org_id>` | Resume a paused schedule |
+
+**Example:**
+
+```bash
+kazi schedule start
+```
+
+```
+[KAZI] Scheduler started
+[KAZI] ├─ silicon-xchange: produce @ "0 7 * * 1,4" (Africa/Nairobi)
+[KAZI] ├─ acme-ventures: produce @ "0 9 * * 1-5" (America/New_York)
+[KAZI] └─ Listening for events...
+```
+
+---
+
+### `kazi tenant`
+
+Manage tenants:
+
+```bash
+kazi tenant <subcommand>
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `add <org_id> --domain <name>` | Create a new tenant config |
+| `list` | List all tenants |
+| `validate <file>` | Validate a tenant config file |
+| `remove <org_id>` | Remove a tenant |
+
+---
+
+### `kazi validate`
+
+Validate configuration files:
+
+```bash
+kazi validate <file> [options]
+```
+
+Validates:
+- `manifest.yaml` — agent references, pipeline structure, destination keys
+- `scoring.yaml` — weight sums, tier coverage, scale ranges
+- `tenant.yaml` — destination keys, secret references, domain existence
+
+**Example:**
+
+```bash
+kazi validate manifest.yaml
+kazi validate scoring.yaml
+kazi validate tenants/silicon-xchange.yaml
+```
+
+---
+
+### `kazi emit`
+
+Fire an event (for event-driven pipelines):
+
+```bash
+kazi emit <event-name> --data <json>
+```
+
+**Example:**
+
+```bash
+kazi emit patent.filed --data '{"patent_id": "US-2026-001234", "institution": "MIT"}'
+```
+
+---
+
+### `kazi render`
+
+Render a report from a previous run:
+
+```bash
+kazi render --run-id <id> --template <path> [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--run-id <id>` | Run to render from | required |
+| `--template <path>` | Template file to use | from manifest |
+| `--format <fmt>` | Output format (html, pdf, md, json) | html |
+| `--output <path>` | Output file path | stdout |
+
+**Example:**
+
+```bash
+kazi render --run-id run_abc123 --template templates/report_v1.html --format pdf --output report.pdf
+```
+
+---
+
+### `kazi adapters`
+
+Manage destination adapters:
+
+```bash
+kazi adapters list
+```
+
+```
+ADAPTER       STATUS      SOURCE
+──────────────────────────────────────
+notion        built-in    kazi.delivery.destinations
+webhook       built-in    kazi.delivery.destinations
+email         built-in    kazi.delivery.destinations
+salesforce    custom      adapters/salesforce.py
+```
+
+---
+
+### `kazi triggers`
+
+List active triggers across all pipelines and tenants:
+
+```bash
+kazi triggers list
+```
+
+```
+Pipeline          Trigger      Schedule/Event         Tenants
+─────────────────────────────────────────────────────────────
+produce           scheduled    0 7 * * 1,4           silicon-xchange, acme
+research          on_demand    —                     all
+on_new_patent     event        patent.filed          carta-clients
+```

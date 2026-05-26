@@ -1,0 +1,283 @@
+---
+title: Destinations
+description: "Built-in adapters and how to write custom destination adapters."
+---
+
+# Destinations
+
+Destinations are where pipeline outputs go. KAZI OS provides a typed abstraction layer so pipelines never reference specific platforms. Tenants configure which adapter handles each logical destination.
+
+## Architecture
+
+```
+Pipeline checkpoint → Logical key ("review") → Tenant config → Adapter → Platform
+```
+
+The pipeline says "push to review." The tenant config says "review means Notion." The adapter handles the Notion API call.
+
+## Built-in Adapters
+
+### Notion
+
+Push structured data to a Notion database:
+
+```yaml
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${NOTION_DB_ID}"
+      token: "${NOTION_TOKEN}"
+      status_field: "Status"          # Optional. Field to track approval
+      approve_value: "Approved"       # Optional. Value that means "approved"
+      reject_value: "Rejected"        # Optional. Value that means "rejected"
+```
+
+The Notion adapter:
+- Creates a new page in the specified database
+- Maps payload fields to Notion properties
+- Polls the `status_field` for checkpoint resolution
+
+### Webhook
+
+Send HTTP requests to any endpoint:
+
+```yaml
+destinations:
+  publish:
+    adapter: webhook
+    config:
+      url: "https://api.example.com/content"
+      method: POST                    # GET, POST, PUT, PATCH (default: POST)
+      headers:
+        Authorization: "Bearer ${API_KEY}"
+        Content-Type: "application/json"
+      timeout: 30                     # Seconds (default: 30)
+      retry: 2                        # Retries on failure (default: 0)
+```
+
+The webhook adapter:
+- Sends the payload as JSON body
+- Returns the response status and body as a receipt
+- Supports custom headers and authentication
+
+### Email
+
+Send formatted emails:
+
+```yaml
+destinations:
+  notify:
+    adapter: email
+    config:
+      to: "team@example.com"
+      cc: "manager@example.com"       # Optional
+      subject: "Pipeline {{pipeline_name}} — {{org_id}}"
+      template: "templates/email_notification.html"  # Optional
+      smtp_host: "${SMTP_HOST}"
+      smtp_port: 587
+      smtp_user: "${SMTP_USER}"
+      smtp_pass: "${SMTP_PASS}"
+```
+
+The email adapter:
+- Renders the payload into the email template (or sends raw payload as JSON)
+- Supports Jinja2 templates for subject and body
+- Uses SMTP for delivery
+
+## The BaseDestination Contract
+
+Every adapter implements this interface:
+
+```python
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime
+
+@dataclass
+class DestinationReceipt:
+    destination: str          # Adapter name
+    receipt_id: str           # Unique ID for tracking
+    status: str               # "delivered" | "pending" | "failed"
+    timestamp: datetime       # When the push happened
+    metadata: dict            # Adapter-specific response data
+
+class BaseDestination(ABC):
+    name: str                 # Adapter identifier
+
+    @abstractmethod
+    async def push(
+        self,
+        payload: dict,
+        config: dict,
+        context: dict
+    ) -> DestinationReceipt:
+        """Push pipeline output to this destination."""
+        ...
+
+    @abstractmethod
+    async def check_status(
+        self,
+        receipt_id: str,
+        config: dict
+    ) -> str:
+        """Check if a pushed item has been reviewed.
+        Returns: 'pending' | 'approved' | 'rejected'
+        """
+        ...
+```
+
+## Writing a Custom Adapter
+
+### Example: Salesforce Adapter
+
+```python
+# adapters/salesforce.py
+from kazi.delivery.destinations import BaseDestination, DestinationReceipt
+from datetime import datetime
+import httpx
+
+class SalesforceDestination(BaseDestination):
+    name = "salesforce"
+
+    async def push(self, payload: dict, config: dict, context: dict) -> DestinationReceipt:
+        instance_url = config["instance_url"]
+        object_type = config["object_type"]
+        token = config["token"]
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{instance_url}/services/data/v58.0/sobjects/{object_type}",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                },
+                json=self.map_payload(payload, config)
+            )
+
+        record_id = response.json().get("id")
+
+        return DestinationReceipt(
+            destination="salesforce",
+            receipt_id=record_id,
+            status="delivered",
+            timestamp=datetime.now(),
+            metadata={"object_type": object_type, "instance_url": instance_url}
+        )
+
+    async def check_status(self, receipt_id: str, config: dict) -> str:
+        instance_url = config["instance_url"]
+        token = config["token"]
+        status_field = config.get("status_field", "Status__c")
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{instance_url}/services/data/v58.0/sobjects/{config['object_type']}/{receipt_id}",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+
+        status = response.json().get(status_field, "pending")
+
+        if status == config.get("approve_value", "Approved"):
+            return "approved"
+        elif status == config.get("reject_value", "Rejected"):
+            return "rejected"
+        return "pending"
+
+    def map_payload(self, payload: dict, config: dict) -> dict:
+        """Map pipeline payload to Salesforce object fields."""
+        mapping = config.get("field_mapping", {})
+        return {sf_field: payload.get(payload_key) for sf_field, payload_key in mapping.items()}
+```
+
+### Register the adapter
+
+```python
+# In your domain's __init__.py or a startup hook
+from kazi.delivery.destinations import DestinationRegistry
+from adapters.salesforce import SalesforceDestination
+
+registry = DestinationRegistry()
+registry.register("salesforce", SalesforceDestination)
+```
+
+### Use in tenant config
+
+```yaml
+destinations:
+  review:
+    adapter: salesforce
+    config:
+      instance_url: "${ACME_SF_URL}"
+      object_type: "ContentReview__c"
+      token: "${ACME_SF_TOKEN}"
+      status_field: "Approval_Status__c"
+      approve_value: "Approved"
+      reject_value: "Rejected"
+      field_mapping:
+        Title__c: title
+        Summary__c: summary
+        Score__c: score.total
+```
+
+## Adapter Registry
+
+List all registered adapters:
+
+```bash
+kazi adapters list
+```
+
+```
+ADAPTER       STATUS      SOURCE
+──────────────────────────────────────
+notion        built-in    kazi.delivery.destinations
+webhook       built-in    kazi.delivery.destinations
+email         built-in    kazi.delivery.destinations
+salesforce    custom      adapters/salesforce.py
+airtable      custom      adapters/airtable.py
+```
+
+## Destination Resolution Flow
+
+When a pipeline hits a checkpoint:
+
+```python
+# 1. Pipeline declares a destination key
+checkpoint = HumanCheckpoint(destination="review")
+
+# 2. KAZI OS looks up the tenant's config for that key
+tenant_config = tenant.destinations["review"]
+# → {"adapter": "notion", "config": {"database_id": "...", "token": "..."}}
+
+# 3. Registry resolves the adapter class
+adapter = registry.get("notion")
+# → NotionDestination
+
+# 4. Adapter pushes the payload
+receipt = await adapter.push(payload, tenant_config["config"], context)
+
+# 5. Pipeline pauses, stores receipt_id
+# 6. Later: adapter.check_status(receipt_id) → "approved"
+# 7. Pipeline resumes
+```
+
+## Error Handling
+
+If a destination push fails:
+
+1. The error is logged with full context (adapter, config, payload size)
+2. If the destination has `retry` configured, it retries with backoff
+3. If all retries fail, the checkpoint enters a `failed_delivery` state
+4. The pipeline pauses (does not fail) and alerts the operator
+
+```yaml
+destinations:
+  publish:
+    adapter: webhook
+    config:
+      url: "https://api.example.com/content"
+      retry: 3              # Retry up to 3 times
+      backoff: 2.0          # 2s, 4s, 8s between retries
+      timeout: 30           # Per-request timeout
+```

@@ -1,0 +1,255 @@
+---
+title: Writing Agents
+description: "The BaseAgent contract and how to implement domain-specific agents."
+---
+
+# Writing Agents
+
+Agents are the units of work in KAZI OS. Each agent implements a typed contract: it receives structured input, executes domain logic, and returns structured output.
+
+## The BaseAgent Contract
+
+Every agent extends `BaseAgent`:
+
+```python
+from kazi.agents.base import BaseAgent, AgentInput, AgentOutput
+
+class MyAgent(BaseAgent):
+    """What this agent does."""
+
+    name = "my_agent"           # Must match manifest agents[].name
+    agent_type = "research"     # Must match manifest agents[].type
+
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        # Your domain logic here
+        return AgentOutput(
+            status="success",
+            payload={"result": "..."},
+            metadata={"duration_ms": 1234}
+        )
+```
+
+## Input and Output Types
+
+### AgentInput
+
+```python
+@dataclass
+class AgentInput:
+    payload: dict           # Data from previous stage (or initial input)
+    context: AgentContext   # Pipeline context (org_id, run_id, config)
+    config: dict            # Agent-specific config from manifest
+```
+
+### AgentOutput
+
+```python
+@dataclass
+class AgentOutput:
+    status: str             # "success" | "failure" | "partial"
+    payload: dict           # Data to pass to next stage
+    metadata: dict          # Timing, counts, diagnostics (not passed downstream)
+    errors: list[str]       # Error messages (if status != "success")
+```
+
+### AgentContext
+
+```python
+@dataclass
+class AgentContext:
+    org_id: str             # Tenant identifier (from tenant.yaml)
+    run_id: str             # Unique pipeline run identifier
+    pipeline_name: str      # Name of the executing pipeline
+    stage_index: int        # Position in the pipeline (0-indexed)
+    config: dict            # Agent config from manifest
+    secrets: dict           # Resolved secrets for this tenant
+```
+
+## Agent Types
+
+### Research Agent
+
+Gathers information from external sources.
+
+```python
+class ContentScout(BaseAgent):
+    name = "scout"
+    agent_type = "research"
+
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        sources = self.config.get("sources", [])
+        findings = []
+
+        for source in sources:
+            if source["type"] == "rss":
+                items = await self.fetch_rss(source["url"])
+                findings.extend(items[:source.get("max_items", 10)])
+            elif source["type"] == "web":
+                query = source["query_template"].format(**input.payload)
+                results = await self.search_web(query)
+                findings.extend(results[:source.get("max_results", 5)])
+
+        return AgentOutput(
+            status="success",
+            payload={"findings": findings},
+            metadata={"source_count": len(sources), "finding_count": len(findings)}
+        )
+```
+
+### Evaluation Agent
+
+Scores or assesses inputs against defined criteria.
+
+```python
+class ContentScorer(BaseAgent):
+    name = "scorer"
+    agent_type = "evaluation"
+
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        findings = input.payload.get("findings", [])
+        scored = []
+
+        for finding in findings:
+            score = await self.score(finding)
+            if score.total >= self.config.get("min_score", 6.0):
+                scored.append({**finding, "score": score.to_dict()})
+
+        return AgentOutput(
+            status="success",
+            payload={"scored_findings": scored},
+            metadata={"total_scored": len(findings), "passed": len(scored)}
+        )
+```
+
+### Synthesis Agent
+
+Produces structured output from scored inputs.
+
+```python
+class ContentCompiler(BaseAgent):
+    name = "compiler"
+    agent_type = "synthesis"
+
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        scored = input.payload.get("scored_findings", [])
+        template = self.load_template(self.config["template"])
+
+        output = template.render(
+            findings=scored,
+            date=datetime.now().isoformat(),
+            org_id=input.context.org_id
+        )
+
+        return AgentOutput(
+            status="success",
+            payload={"report": output, "format": "html"},
+            metadata={"word_count": len(output.split())}
+        )
+```
+
+### Delivery Agent
+
+Pushes outputs to external systems.
+
+```python
+class ContentDistributor(BaseAgent):
+    name = "distributor"
+    agent_type = "delivery"
+
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        content = input.payload.get("report")
+        channels = self.config.get("channels", [])
+        receipts = []
+
+        for channel in channels:
+            receipt = await self.publish(channel, content, input.context)
+            receipts.append(receipt)
+
+        return AgentOutput(
+            status="success",
+            payload={"receipts": receipts},
+            metadata={"channels_published": len(receipts)}
+        )
+```
+
+## Agent Discovery
+
+KAZI OS automatically discovers agents in your domain's `agents/` directory:
+
+```
+my-domain/
+└── agents/
+    ├── __init__.py
+    ├── scout.py          ← Contains ContentScout(BaseAgent)
+    ├── scorer.py         ← Contains ContentScorer(BaseAgent)
+    └── compiler.py       ← Contains ContentCompiler(BaseAgent)
+```
+
+The `AgentRegistry` scans for all `BaseAgent` subclasses and indexes them by `name`:
+
+```python
+from kazi.agents.registry import AgentRegistry
+
+registry = AgentRegistry()
+registry.discover("my-domain/agents")
+
+# Access by name
+scout = registry.get("scout")
+```
+
+<Note>
+Agent `name` must match the name declared in `manifest.yaml`. If they do not match, the PipelineBuilder will raise a validation error at load time.
+</Note>
+
+## Error Handling
+
+Agents should handle errors gracefully and return structured failure information:
+
+```python
+async def execute(self, input: AgentInput) -> AgentOutput:
+    try:
+        result = await self.do_work(input)
+        return AgentOutput(status="success", payload=result)
+    except RateLimitError as e:
+        return AgentOutput(
+            status="failure",
+            payload={},
+            errors=[f"Rate limited: retry after {e.retry_after}s"]
+        )
+    except Exception as e:
+        return AgentOutput(
+            status="failure",
+            payload={},
+            errors=[str(e)]
+        )
+```
+
+If an agent returns `status="failure"` and the pipeline stage has `retry > 0`, KAZI OS will retry with exponential backoff.
+
+## Testing Agents
+
+Test agents in isolation without running the full pipeline:
+
+```python
+import asyncio
+from kazi.agents.base import AgentInput, AgentContext
+
+async def test_scout():
+    scout = ContentScout(config={"sources": [{"type": "web", "query_template": "AI news"}]})
+
+    input = AgentInput(
+        payload={"topic": "AI agents"},
+        context=AgentContext(org_id="test", run_id="test-001", pipeline_name="test", stage_index=0),
+        config=scout.config
+    )
+
+    output = await scout.execute(input)
+    assert output.status == "success"
+    assert len(output.payload["findings"]) > 0
+
+asyncio.run(test_scout())
+```
+
+```bash
+python -m pytest agents/test_scout.py
+```

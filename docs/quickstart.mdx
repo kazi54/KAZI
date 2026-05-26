@@ -1,0 +1,194 @@
+---
+title: Quickstart
+description: "Build your first domain pipeline in 5 minutes."
+---
+
+# Quickstart
+
+This guide takes you from zero to a running pipeline in under 5 minutes.
+
+## Prerequisites
+
+- Python 3.11+
+- An OpenAI or Anthropic API key (for agent execution)
+
+## Install KAZI OS
+
+```bash
+pip install kazi-os
+```
+
+## Scaffold a New Domain
+
+```bash
+kazi init my-domain
+```
+
+This creates:
+
+```
+my-domain/
+├── manifest.yaml       ← Your domain definition
+├── scoring.yaml        ← Scoring rubrics and dimensions
+├── agents/             ← Agent implementations
+│   └── __init__.py
+├── templates/          ← Report templates
+│   └── report_v1.html
+└── routes.py           ← API routes (optional)
+```
+
+## Define Your Manifest
+
+Edit `manifest.yaml` to describe your domain:
+
+```yaml manifest.yaml
+domain: my-domain
+version: "1.0"
+description: "My first KAZI OS domain"
+
+agents:
+  - name: researcher
+    type: research
+    description: "Gather information from configured sources"
+    config:
+      sources:
+        - type: web
+          query_template: "{{topic}} latest developments"
+
+  - name: analyst
+    type: evaluation
+    description: "Score findings against methodology"
+    config:
+      scoring_file: scoring.yaml
+
+  - name: writer
+    type: synthesis
+    description: "Produce structured output from scored findings"
+    config:
+      template: templates/report_v1.html
+
+pipelines:
+  analyze:
+    trigger: on_demand
+    stages:
+      - agent: researcher
+        timeout: 60
+      - agent: analyst
+      - checkpoint: review
+        destination: review
+        config:
+          queue: drafts
+      - agent: writer
+
+destinations:
+  review:
+    adapter: email
+    config:
+      to: "you@example.com"
+      subject: "Review needed: {{pipeline_name}}"
+```
+
+## Write Your First Agent
+
+```python agents/researcher.py
+from kazi.agents.base import BaseAgent, AgentInput, AgentOutput
+
+class ResearcherAgent(BaseAgent):
+    """Gather information from configured sources."""
+
+    name = "researcher"
+    agent_type = "research"
+
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        # Your research logic here
+        sources = self.config.get("sources", [])
+        findings = []
+
+        for source in sources:
+            # Implement your research methodology
+            result = await self.search(source, input.payload.get("topic"))
+            findings.append(result)
+
+        return AgentOutput(
+            status="success",
+            payload={"findings": findings},
+            metadata={"source_count": len(findings)}
+        )
+```
+
+## Run the Pipeline
+
+```bash
+kazi run analyze --input '{"topic": "AI agent frameworks"}'
+```
+
+Output:
+
+```
+[KAZI] Loading domain: my-domain v1.0
+[KAZI] Pipeline: analyze
+[KAZI] ├─ researcher .......... ✓ 12.3s (3 sources)
+[KAZI] ├─ analyst ............. ✓ 4.1s (score: 7.8/10)
+[KAZI] ├─ review .............. ⏸ CHECKPOINT (email sent)
+[KAZI] │
+[KAZI] Waiting for human approval...
+```
+
+## Resume After Review
+
+Once you approve (reply to the email, or use the CLI):
+
+```bash
+kazi resume analyze --approve
+```
+
+```
+[KAZI] ├─ review .............. ✓ approved
+[KAZI] └─ writer .............. ✓ 6.2s
+[KAZI]
+[KAZI] Pipeline complete. Output: output/report-2026-05-26.html
+```
+
+## Add a Tenant
+
+To run this pipeline for a client, create a tenant config:
+
+```yaml tenants/acme.yaml
+org_id: acme
+name: Acme Corp
+domain: my-domain
+
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${ACME_NOTION_DB}"
+      token: "${ACME_NOTION_TOKEN}"
+
+preferences:
+  schedule: "0 9 * * 1"
+  timezone: "America/New_York"
+```
+
+Then run scoped to that tenant:
+
+```bash
+kazi run analyze --tenant acme --input '{"topic": "market trends"}'
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Manifest Reference" icon="book" href="/workflows/manifest">
+    Full manifest.yaml specification with all options.
+  </Card>
+  <Card title="Agent Contract" icon="robot" href="/workflows/agents">
+    How to write agents that plug into KAZI OS.
+  </Card>
+  <Card title="Scoring System" icon="chart-bar" href="/reports/scoring">
+    Define scoring rubrics for automated evaluation.
+  </Card>
+  <Card title="Multi-Tenancy" icon="users" href="/cloud/tenants">
+    Configure and manage multiple clients.
+  </Card>
+</CardGroup>

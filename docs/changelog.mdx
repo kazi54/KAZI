@@ -1,0 +1,60 @@
+---
+title: Changelog
+description: "Version history for KAZI OS."
+---
+
+# Changelog
+
+## v0.3.0 — 2026-05-26
+
+**Manifest-to-Instance Pipeline**
+
+The core platform modules that turn a domain manifest into a running multi-tenant product.
+
+### Added
+
+- **`PipelineBuilder`** — Reads `pipelines:` from manifest.yaml, resolves agent names from registry, builds `Pipeline` objects with stages, HITL checkpoints, and triggers.
+- **`BaseDestination`** — Typed abstraction for output targets. CRM-agnostic delivery layer.
+- **`DestinationRegistry`** — Auto-discovers and registers destination adapters. Ships with Notion, Webhook, and Email adapters.
+- **`TenantConfig`** — Reads `tenant.yaml`, resolves `${ENV_VAR}` secrets, provides typed access to destinations and preferences.
+- **`AgentRegistry`** — Auto-discovers `BaseAgent` subclasses from domain `agents/` directories. Indexes by name and domain namespace.
+- **`plugin_loader` v2** — Full bootstrap sequence: discover agents, build pipelines, register triggers, mount routes, load tenants.
+- **`tenants/_template.yaml`** — Reference tenant config with full documentation.
+- **Documentation** — Complete Mintlify docs covering Workflows, Reports, and Cloud.
+
+### Architecture
+
+```
+manifest.yaml → AgentRegistry → PipelineBuilder → Orchestrator
+                                                        ↓
+tenant.yaml → TenantConfig → DestinationRegistry → Scoped Execution
+```
+
+---
+
+## v0.2.0 — 2026-05-01
+
+**Core Agent Framework**
+
+### Added
+
+- **`BaseAgent`** — Typed agent contract with 4 specializations (research, evaluation, synthesis, delivery).
+- **`Pipeline`** — Sequential execution with `HumanCheckpoint` pause/resume.
+- **`FanOut`** — Parallel agent execution with semaphore-based concurrency control.
+- **`Orchestrator`** — Job dispatch to pipelines with trigger management.
+- **`ScoringSystem`** — Multi-dimensional weighted scoring, YAML-loadable, with legend and tiers.
+- **Domain template** — `manifest.yaml` + `routes.py` + `scoring.yaml` scaffold.
+- **CLI** — `kazi init` scaffolds from template, `kazi serve` starts the server.
+- **Plugin loader** v1 — Reads manifest, mounts FastAPI routes, registers dashboard pages.
+
+---
+
+## v0.1.0 — 2026-04-15
+
+**Initial Release**
+
+### Added
+
+- Project structure and package configuration.
+- Basic FastAPI server with domain mounting.
+- Initial documentation and README.

@@ -1,0 +1,171 @@
+---
+title: Triggers
+description: "Scheduled, on-demand, and event-driven pipeline execution."
+---
+
+# Triggers
+
+Triggers define **when** a pipeline runs. KAZI OS supports three trigger types.
+
+## On-Demand
+
+Run manually via CLI or API:
+
+```yaml
+pipelines:
+  research:
+    trigger: on_demand
+    stages:
+      - agent: researcher
+      - agent: scorer
+```
+
+```bash
+# CLI
+kazi run research --input '{"topic": "quantum computing"}'
+
+# API
+POST /api/pipelines/research/run
+{"input": {"topic": "quantum computing"}}
+```
+
+## Scheduled
+
+Run on a cron schedule:
+
+```yaml
+pipelines:
+  produce:
+    trigger: scheduled
+    schedule: "0 7 * * 1,4"    # 7am every Monday and Thursday
+    stages:
+      - agent: scout
+      - agent: scorer
+      - checkpoint: review
+        destination: review
+      - agent: compiler
+```
+
+### Cron Syntax
+
+```
+┌───────────── minute (0-59)
+│ ┌───────────── hour (0-23)
+│ │ ┌───────────── day of month (1-31)
+│ │ │ ┌───────────── month (1-12)
+│ │ │ │ ┌───────────── day of week (0-6, Sunday=0)
+│ │ │ │ │
+* * * * *
+```
+
+Common patterns:
+
+| Schedule | Cron | Meaning |
+|----------|------|---------|
+| Twice weekly | `0 7 * * 1,4` | Monday and Thursday at 7am |
+| Daily | `0 9 * * *` | Every day at 9am |
+| Weekdays | `0 8 * * 1-5` | Monday–Friday at 8am |
+| Weekly | `0 10 * * 1` | Every Monday at 10am |
+| Every 6 hours | `0 */6 * * *` | At minute 0 every 6 hours |
+
+### Timezone
+
+Schedules respect the tenant's configured timezone:
+
+```yaml
+# tenant.yaml
+preferences:
+  timezone: "Africa/Nairobi"    # Schedules fire in this timezone
+```
+
+If no tenant timezone is set, schedules use UTC.
+
+## Event-Driven
+
+Run when an external event fires:
+
+```yaml
+pipelines:
+  on_new_patent:
+    trigger: event
+    event: "patent.filed"
+    stages:
+      - agent: patent_ingester
+      - agent: patent_scorer
+      - agent: match_finder
+```
+
+### Firing Events
+
+```bash
+# CLI
+kazi emit patent.filed --data '{"patent_id": "US-2026-001234"}'
+
+# API
+POST /api/events
+{"event": "patent.filed", "data": {"patent_id": "US-2026-001234"}}
+
+# Webhook (external systems can fire events)
+POST /api/webhooks/events
+{"event": "patent.filed", "data": {...}, "secret": "${WEBHOOK_SECRET}"}
+```
+
+### Event Filtering
+
+Only trigger for events matching specific criteria:
+
+```yaml
+pipelines:
+  on_high_value_patent:
+    trigger: event
+    event: "patent.filed"
+    filter:
+      field: "data.estimated_value"
+      operator: "gte"
+      value: 1000000
+    stages:
+      - agent: priority_scorer
+```
+
+## Multi-Tenant Scheduling
+
+When running with tenants, each tenant can have independent schedules:
+
+```yaml
+# tenants/silicon-xchange.yaml
+preferences:
+  schedule: "0 7 * * 1,4"      # Mon/Thu at 7am
+  timezone: "Africa/Nairobi"
+
+# tenants/acme-ventures.yaml
+preferences:
+  schedule: "0 9 * * 1-5"      # Weekdays at 9am
+  timezone: "America/New_York"
+```
+
+The orchestrator dispatches independently per tenant:
+
+```bash
+kazi schedule start
+```
+
+```
+[KAZI] Scheduler started
+[KAZI] ├─ silicon-xchange: produce @ "0 7 * * 1,4" (Africa/Nairobi)
+[KAZI] ├─ acme-ventures: produce @ "0 9 * * 1-5" (America/New_York)
+[KAZI] └─ Listening for events...
+```
+
+## Listing Active Triggers
+
+```bash
+kazi triggers list
+```
+
+```
+Pipeline          Trigger      Schedule/Event         Tenants
+─────────────────────────────────────────────────────────────
+produce           scheduled    0 7 * * 1,4           silicon-xchange, acme
+research          on_demand    —                     all
+on_new_patent     event        patent.filed          carta-clients
+```

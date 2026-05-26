@@ -1,0 +1,111 @@
+---
+title: Introduction
+description: "KAZI OS turns your domain blueprint into production-ready workflows, structured reports, and client-specific delivery."
+---
+
+# What is KAZI OS?
+
+KAZI OS is the infrastructure that turns domain expertise into a multi-tenant product.
+
+It is not an agent framework — it does not help you build agents from scratch.
+It is not a workflow engine — it does not help you run arbitrary tasks.
+
+It is the system that lets expert teams **scale what they know without rebuilding how they work.**
+
+## The Core Idea
+
+You define your methodology once in a **domain manifest**. KAZI OS generates the orchestration, scoring, and delivery infrastructure from that manifest. You add clients by adding config files — not code.
+
+```yaml
+# manifest.yaml — your domain expertise as config
+domain: content-production
+version: "1.0"
+
+agents:
+  - name: scout
+    type: research
+    description: "Find high-signal topics from configured sources"
+
+  - name: scorer
+    type: evaluation
+    description: "Score topics against methodology rubrics"
+
+  - name: compiler
+    type: synthesis
+    description: "Produce structured deliverables from scored inputs"
+
+pipelines:
+  produce:
+    stages:
+      - agent: scout
+      - agent: scorer
+      - checkpoint: review
+      - agent: compiler
+```
+
+## Three Products, One Platform
+
+<CardGroup cols={3}>
+  <Card title="Workflows" icon="bolt" href="/workflows/overview">
+    Build repeatable agentic workflows from your domain blueprint.
+  </Card>
+  <Card title="Reports" icon="file-lines" href="/reports/overview">
+    Generate structured, client-ready deliverables from your methodology.
+  </Card>
+  <Card title="Cloud" icon="cloud" href="/cloud/overview">
+    Deploy your workflows across clients, teams, and systems.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+```
+manifest.yaml + tenant.yaml → KAZI OS → Running multi-tenant product
+```
+
+1. **Define** — Write a domain manifest that captures your methodology, agents, and pipeline
+2. **Configure** — Add tenant configs for each client (their destinations, secrets, preferences)
+3. **Run** — KAZI OS executes your pipeline, scores outputs, delivers to each client's systems
+
+## Who Is This For?
+
+KAZI OS is built for **domain experts who want to productize their expertise**:
+
+- Consultants turning repeatable engagements into scalable services
+- Research teams automating methodology-driven analysis
+- Agencies delivering structured output to multiple clients
+- Technical founders building vertical AI products on top of their domain knowledge
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                     KAZI OS                          │
+├──────────────┬──────────────┬───────────────────────┤
+│  Workflows   │   Reports    │        Cloud          │
+│              │              │                       │
+│  • Agents    │  • Scoring   │  • Tenants            │
+│  • Pipeline  │  • Templates │  • Destinations       │
+│  • Triggers  │  • Formats   │  • Isolation          │
+│  • HITL      │  • Audit     │  • Scheduling         │
+└──────────────┴──────────────┴───────────────────────┘
+        ↑                              ↑
+   manifest.yaml                  tenant.yaml
+```
+
+## Installation
+
+```bash
+pip install kazi-os
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build your first pipeline in 5 minutes.
+  </Card>
+  <Card title="Manifest Reference" icon="book" href="/workflows/manifest">
+    Full specification for manifest.yaml.
+  </Card>
+</CardGroup>

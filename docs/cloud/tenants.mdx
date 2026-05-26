@@ -1,0 +1,196 @@
+---
+title: Tenant Configuration
+description: "Full specification for tenant.yaml — client-specific config."
+---
+
+# Tenant Configuration
+
+A tenant represents one client. The tenant config declares their identity, destinations, secrets, and preferences.
+
+## File Location
+
+```
+tenants/
+├── silicon-xchange.yaml
+├── acme-ventures.yaml
+└── _template.yaml          ← Copy this for new clients
+```
+
+## Full Schema
+
+```yaml tenant.yaml
+# ─── Identity ─────────────────────────────────────────────
+org_id: string            # Required. Unique tenant identifier (lowercase, hyphens)
+name: string              # Required. Human-readable client name
+domain: string            # Required. Which domain manifest to use
+
+# ─── Destinations ─────────────────────────────────────────
+destinations:
+  <key>:                  # Logical destination key (must match pipeline checkpoints)
+    adapter: string       # Required. Adapter name (notion, webhook, email, salesforce, etc.)
+    config: object        # Required. Adapter-specific configuration
+
+# ─── Preferences ──────────────────────────────────────────
+preferences:
+  schedule: string        # Optional. Cron override for this tenant
+  timezone: string        # Optional. IANA timezone (default: UTC)
+  format: string          # Optional. Preferred output format (html, pdf, markdown, json)
+  language: string        # Optional. Output language (default: en)
+  notify_on_complete: bool  # Optional. Send notification when pipeline finishes
+```
+
+## Secret Resolution
+
+Secrets use `${ENV_VAR}` syntax. They resolve from environment variables at runtime:
+
+```yaml
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${SX_NOTION_DB}"       # Resolves from env
+      token: "${SX_NOTION_TOKEN}"          # Resolves from env
+```
+
+Set environment variables per deployment:
+
+```bash
+# .env or deployment config
+SX_NOTION_DB=abc123def456
+SX_NOTION_TOKEN=secret_xxx...
+ACME_SF_TOKEN=sf_xxx...
+```
+
+<Warning>
+Never commit secrets to tenant YAML files. Always use `${ENV_VAR}` references. The actual values live in your deployment environment.
+</Warning>
+
+## Complete Example
+
+```yaml tenants/silicon-xchange.yaml
+org_id: silicon-xchange
+name: Silicon Xchange
+domain: content-production
+
+destinations:
+  review:
+    adapter: notion
+    config:
+      database_id: "${SX_NOTION_DB}"
+      token: "${SX_NOTION_TOKEN}"
+      status_field: "Status"
+      approve_value: "Approved"
+
+  publish:
+    adapter: webhook
+    config:
+      url: "https://api.beehiiv.com/v2/publications/${SX_PUB_ID}/posts"
+      method: POST
+      headers:
+        Authorization: "Bearer ${SX_BEEHIIV_KEY}"
+        Content-Type: "application/json"
+
+  notify:
+    adapter: webhook
+    config:
+      url: "${SX_SLACK_WEBHOOK}"
+      method: POST
+
+preferences:
+  schedule: "0 7 * * 1,4"
+  timezone: "Africa/Nairobi"
+  format: html
+  language: en
+  notify_on_complete: true
+```
+
+## Managing Tenants
+
+### Add a new tenant
+
+```bash
+kazi tenant add my-client --domain content-production
+```
+
+Creates `tenants/my-client.yaml` from the template. Edit to add their destinations and secrets.
+
+### List tenants
+
+```bash
+kazi tenant list
+```
+
+```
+ORG_ID              DOMAIN                SCHEDULE          TIMEZONE
+────────────────────────────────────────────────────────────────────
+silicon-xchange     content-production    0 7 * * 1,4      Africa/Nairobi
+acme-ventures       content-production    0 9 * * 1-5      America/New_York
+kazi54              content-production    0 6 * * 1-5      America/Chicago
+```
+
+### Validate a tenant config
+
+```bash
+kazi tenant validate tenants/silicon-xchange.yaml
+```
+
+Checks:
+- org_id is unique
+- domain exists in `domains/`
+- All destination keys match pipeline checkpoint references
+- Secret references (`${...}`) have corresponding environment variables
+
+### Remove a tenant
+
+```bash
+kazi tenant remove silicon-xchange
+```
+
+<Note>
+Removing a tenant does not delete historical run data or logs. It only removes the config file and stops future scheduled runs.
+</Note>
+
+## Tenant Context in Agents
+
+Agents receive tenant context via `AgentContext`:
+
+```python
+async def execute(self, input: AgentInput) -> AgentOutput:
+    # Access tenant info
+    org_id = input.context.org_id          # "silicon-xchange"
+    secrets = input.context.secrets         # Resolved secrets for this tenant
+
+    # Use tenant-specific credentials
+    notion_token = secrets.get("SX_NOTION_TOKEN")
+
+    # Scope your logic per tenant if needed
+    if org_id == "silicon-xchange":
+        sources = self.config["sources"]["africa_tech"]
+    else:
+        sources = self.config["sources"]["default"]
+```
+
+## Per-Tenant Overrides
+
+Tenants can override agent config for their runs:
+
+```yaml tenants/acme-ventures.yaml
+org_id: acme-ventures
+domain: content-production
+
+# Override agent config for this tenant
+agent_overrides:
+  scout:
+    config:
+      sources:
+        - type: rss
+          url: "https://acme-specific-feed.com/rss"
+      filters:
+        min_relevance: 0.8    # Stricter threshold for this client
+
+preferences:
+  schedule: "0 9 * * 1-5"
+  timezone: "America/New_York"
+```
+
+This lets you customize behavior per client without forking the pipeline.

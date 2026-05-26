@@ -1,0 +1,118 @@
+---
+title: Reports Overview
+description: "Generate structured, client-ready deliverables from your methodology."
+---
+
+# Reports
+
+Reports are the output layer of KAZI OS. They transform raw pipeline results into structured, auditable deliverables using your scoring methodology and templates.
+
+## The Model
+
+```
+Scoring System + Pipeline Output + Template → Structured Report
+```
+
+Your methodology is encoded in `scoring.yaml`. Your output format is defined in templates. Every report inherits both — consistently, every time.
+
+## Key Concepts
+
+| Concept | What it is | Where it lives |
+|---------|-----------|----------------|
+| **Scoring System** | Multi-dimensional weighted evaluation framework | `scoring.yaml` |
+| **Dimension** | A single axis of evaluation (e.g., relevance, novelty, authority) | Defined in scoring.yaml |
+| **Tier** | A threshold-based classification (e.g., Publish, Revise, Discard) | Defined in scoring.yaml |
+| **Template** | A Jinja2 file that renders scored data into a deliverable | `templates/*.html` |
+| **Report** | The final output — HTML, PDF, JSON, or Markdown | Generated at runtime |
+
+## How It Works
+
+### 1. You define scoring dimensions
+
+```yaml
+# scoring.yaml
+dimensions:
+  - name: relevance
+    weight: 0.3
+    description: "How relevant is this to the target audience?"
+    scale: [1, 10]
+
+  - name: novelty
+    weight: 0.25
+    description: "Does this add new information or perspective?"
+    scale: [1, 10]
+
+  - name: authority
+    weight: 0.25
+    description: "Is the source credible and authoritative?"
+    scale: [1, 10]
+
+  - name: actionability
+    weight: 0.2
+    description: "Can the audience act on this information?"
+    scale: [1, 10]
+```
+
+### 2. Agents score against those dimensions
+
+```python
+class ContentScorer(BaseAgent):
+    async def execute(self, input: AgentInput) -> AgentOutput:
+        scoring_system = ScoringSystem.from_yaml("scoring.yaml")
+
+        for finding in input.payload["findings"]:
+            scores = await self.evaluate(finding, scoring_system.dimensions)
+            finding["score"] = scoring_system.calculate(scores)
+            finding["tier"] = scoring_system.classify(finding["score"])
+
+        return AgentOutput(status="success", payload=input.payload)
+```
+
+### 3. Templates render the scored output
+
+```html
+<!-- templates/report_v1.html -->
+<h1>Content Intelligence Report — {{ date }}</h1>
+<p>Client: {{ org_id }} | Pipeline: {{ pipeline_name }}</p>
+
+{% for item in scored_findings %}
+  {% if item.tier == "publish" %}
+  <div class="finding">
+    <h3>{{ item.title }}</h3>
+    <p>Score: {{ item.score.total }}/10 ({{ item.tier }})</p>
+    <p>{{ item.summary }}</p>
+  </div>
+  {% endif %}
+{% endfor %}
+```
+
+## Why This Matters
+
+Without a scoring system, every output is subjective. With one:
+
+- **Consistency** — Same methodology applied to every piece of content, every client, every run
+- **Auditability** — Every score is traceable to specific dimensions and weights
+- **Methodology versioning** — Change your rubrics, every future output inherits the change
+- **Benchmarking** — Compare outputs across time, clients, and domains
+
+## Output Formats
+
+Reports can be rendered in multiple formats from the same template:
+
+| Format | Use case | How |
+|--------|----------|-----|
+| HTML | Web delivery, email embedding | Default Jinja2 rendering |
+| PDF | Client deliverables, formal reports | HTML → WeasyPrint → PDF |
+| JSON | API consumption, downstream processing | Structured data export |
+| Markdown | Documentation, Notion pages | Template with `.md` extension |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Scoring System" icon="chart-bar" href="/reports/scoring">
+    Full scoring.yaml specification and calculation logic.
+  </Card>
+  <Card title="Templates" icon="file-code" href="/reports/templates">
+    How to write Jinja2 templates for report rendering.
+  </Card>
+</CardGroup>
