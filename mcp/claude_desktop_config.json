@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "kazi-os": {
+      "command": "python",
+      "args": ["-m", "mcp.server"],
+      "cwd": "/path/to/your/kazi-project",
+      "env": {
+        "KAZI_PROJECT_DIR": "/path/to/your/kazi-project"
+      }
+    }
+  }
+}
