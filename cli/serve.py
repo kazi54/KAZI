@@ -1,27 +1,42 @@
 """kazi serve — start the KAZI platform server."""
-
 from pathlib import Path
 
 
-def serve(host: str = "0.0.0.0", port: int = 8000) -> None:
+def serve(
+    host: str = "0.0.0.0",
+    port: int = 8000,
+    reload: bool = False,
+    workers: int = 1,
+) -> None:
     """Start the KAZI FastAPI server with all domain plugins loaded."""
     import uvicorn
     from fastapi import FastAPI
-    from api.plugin_loader import load_domains
+    from api.plugin_loader import load_platform
 
     app = FastAPI(
-        title="KAZI Platform",
-        description="AI-powered professional services platform",
-        version="0.1.0",
+        title="KAZI OS",
+        description="Domain-agnostic platform for AI-powered professional services",
+        version="0.3.0",
     )
 
-    # Load domain plugins
-    print("\n  KAZI Platform v0.1.0")
-    print("  Loading domains...")
-    domains = load_domains(app, domains_dir=Path("./domains"))
+    # Load platform (domains, agents, pipelines, tenants)
+    print("\n  KAZI OS v0.3.0")
+    print("  Loading platform...")
 
-    if not domains:
+    platform = load_platform(
+        app,
+        domains_dir=Path("./domains"),
+        tenants_dir=Path("./tenants"),
+    )
+
+    if not platform.get("domains"):
         print("  ⚠ No domains loaded. Create one with: kazi init <name>")
+
+    tenant_count = len(platform.get("tenants", []))
+    pipeline_count = len(platform.get("pipelines", []))
+    print(f"  Domains:     {len(platform.get('domains', []))}")
+    print(f"  Pipelines:   {pipeline_count}")
+    print(f"  Tenants:     {tenant_count}")
     print()
 
     # Platform health endpoint
@@ -29,24 +44,32 @@ def serve(host: str = "0.0.0.0", port: int = 8000) -> None:
     async def health():
         return {
             "status": "ok",
-            "version": "0.1.0",
-            "domains": [d.name for d in domains],
+            "version": "0.3.0",
+            "domains": platform.get("domain_names", []),
+            "tenants": tenant_count,
+            "pipelines": pipeline_count,
         }
 
-    # Domain registry endpoint (for frontend plugin loading)
+    # Domain registry endpoint
     @app.get("/api/domains")
     async def get_domains():
+        return platform.get("domain_info", [])
+
+    # Tenant registry endpoint
+    @app.get("/api/tenants")
+    async def get_tenants():
         return [
-            {
-                "name": d.name,
-                "display_name": d.display_name,
-                "version": d.version,
-                "prefix": d.prefix,
-            }
-            for d in domains
+            {"org_id": t.org_id, "name": t.name, "domain": t.domain}
+            for t in platform.get("tenants", [])
         ]
 
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        reload=reload,
+        workers=workers,
+    )
 
 
 def list_domains() -> None:
