@@ -104,15 +104,15 @@ def main():
         return
 
     if args.command == "init":
-        from cli.init import init_domain
+        from kazi.cli.init import init_domain
         init_domain(args.domain_name, with_scoring=args.with_scoring)
 
     elif args.command == "serve":
-        from cli.serve import serve
+        from kazi.cli.serve import serve
         serve(host=args.host, port=args.port, reload=args.reload, workers=args.workers)
 
     elif args.command == "run":
-        from cli.run import run_pipeline
+        from kazi.cli.run import run_pipeline
         run_pipeline(
             pipeline_name=args.pipeline,
             tenant=args.tenant,
@@ -123,7 +123,7 @@ def main():
         )
 
     elif args.command == "resume":
-        from cli.run import resume_pipeline
+        from kazi.cli.run import resume_pipeline
         resolution = "approved" if args.approve else "rejected" if args.reject else None
         if not resolution:
             print("  Error: must specify --approve or --reject")
@@ -136,7 +136,7 @@ def main():
         )
 
     elif args.command == "retry":
-        from cli.run import retry_pipeline
+        from kazi.cli.run import retry_pipeline
         retry_pipeline(
             pipeline_name=args.pipeline,
             run_id=args.run_id,
@@ -144,19 +144,19 @@ def main():
         )
 
     elif args.command == "tenant":
-        from cli.tenant import handle_tenant
+        from kazi.cli.tenant import handle_tenant
         handle_tenant(args)
 
     elif args.command == "validate":
-        from cli.validate import validate_file
+        from kazi.cli.validate import validate_file
         validate_file(args.file)
 
     elif args.command == "schedule":
-        from cli.schedule import handle_schedule
+        from kazi.cli.schedule import handle_schedule
         handle_schedule(args)
 
     elif args.command == "render":
-        from cli.render import render_report
+        from kazi.cli.render import render_report
         render_report(
             run_id=args.run_id,
             template=args.template,
@@ -165,19 +165,19 @@ def main():
         )
 
     elif args.command == "emit":
-        from cli.emit import emit_event
+        from kazi.cli.emit import emit_event
         emit_event(event_name=args.event, data_json=args.data)
 
     elif args.command == "domains":
-        from cli.serve import list_domains
+        from kazi.cli.serve import list_domains
         list_domains()
 
     elif args.command == "adapters":
-        from cli.adapters import list_adapters
+        from kazi.cli.adapters import list_adapters
         list_adapters()
 
     elif args.command == "triggers":
-        from cli.triggers import list_triggers
+        from kazi.cli.triggers import list_triggers
         list_triggers()
 
     else:

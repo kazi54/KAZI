@@ -45,7 +45,7 @@ pdf = [
 ]
 
 [project.scripts]
-kazi = "cli.__main__:main"
+kazi = "kazi.cli.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/Jean-njoroge/KAZI"
