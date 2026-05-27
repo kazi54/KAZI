@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud — KAZI OS</title>
+    <meta name="description" content="Deploy your workflows across clients, teams, and systems. One workflow. Many clients. Zero rebuilds.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-left">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">K</div>
+                KAZI OS
+            </a>
+            <ul class="nav-links">
+                <li class="nav-dropdown">
+                    <span class="nav-dropdown-trigger">
+                        Products
+                        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4.5l3 3 3-3"/></svg>
+                    </span>
+                    <div class="nav-dropdown-menu">
+                        <a href="workflows.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-workflows">⚡</div>
+                            <div class="dropdown-item-text"><h4>Workflows</h4><p>Build repeatable agentic workflows from your domain blueprint.</p></div>
+                        </a>
+                        <a href="reports.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-reports">◈</div>
+                            <div class="dropdown-item-text"><h4>Reports</h4><p>Generate structured, client-ready deliverables from your methodology.</p></div>
+                        </a>
+                        <a href="cloud.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-cloud">☁</div>
+                            <div class="dropdown-item-text"><h4>Cloud</h4><p>Deploy your workflows across clients, teams, and systems.</p></div>
+                        </a>
+                    </div>
+                </li>
+                <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                <li><a href="changelog.html">Changelog</a></li>
+                <li><a href="blog.html">Blog</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <a href="https://github.com/kazi54/KAZI" target="_blank" class="nav-badge">Open Source ↗</a>
+            <a href="#" class="nav-signin">Sign in</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="product-hero">
+        <span class="badge badge-blue">☁ Cloud</span>
+        <h1>One workflow. Many clients.<br>Zero rebuilds.</h1>
+        <p>Add a tenant config and your pipeline runs for any client. CRM-agnostic delivery. Built-in isolation. You sell expertise, not hours.</p>
+        <a href="https://docs.kazi.dev/cloud/overview" target="_blank" class="hero-cta">
+            Read the docs
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <h2>How it works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number step-blue">01</div>
+                <h3>Create a tenant config</h3>
+                <p>Declare the client's org ID, preferences, secrets, and destination adapters in a single YAML file.</p>
+            </div>
+            <div class="step">
+                <div class="step-number step-blue">02</div>
+                <h3>Connect their destinations</h3>
+                <p>Notion, Salesforce, HubSpot, Airtable, webhook, email — whatever CRM they use. KAZI OS routes to it.</p>
+            </div>
+            <div class="step">
+                <div class="step-number step-blue">03</div>
+                <h3>Run scoped pipelines</h3>
+                <p>Same workflow, different tenant context. Outputs are isolated, logs are scoped, secrets never cross boundaries.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 1: Tenant Config -->
+    <section class="code-section">
+        <div class="code-section-text">
+            <h2>Tenants are just config files</h2>
+            <p>Adding a client is adding a YAML file. No code changes. No redeployment. No database migrations.</p>
+            <ul>
+                <li>Org ID scopes all pipeline runs and outputs</li>
+                <li>Secrets resolve from environment variables at runtime</li>
+                <li>Destinations map to named adapters (review, publish, archive)</li>
+                <li>Preferences customize behavior per client</li>
+            </ul>
+        </div>
+        <div class="code-preview">
+            <div class="code-tabs">
+                <div class="code-tab active"><span class="code-tab-icon tab-tenant">T</span> tenants/silicon-xchange.yaml</div>
+            </div>
+            <div class="code-body">
+                <div><span class="key">org_id</span><span class="bracket">:</span> <span class="string">silicon-xchange</span></div>
+                <div><span class="key">display_name</span><span class="bracket">:</span> <span class="string">Silicon Xchange</span></div>
+                <div><span class="key">domain</span><span class="bracket">:</span> <span class="string">content</span></div>
+                <div><br></div>
+                <div><span class="key">destinations</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="key">review</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">adapter</span><span class="bracket">:</span> <span class="type">notion</span></div>
+                <div class="indent2"><span class="key">config</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="key">workspace</span><span class="bracket">:</span> <span class="string">${SX_NOTION_WORKSPACE}</span></div>
+                <div class="indent3"><span class="key">database</span><span class="bracket">:</span> <span class="string">${SX_NOTION_DB}</span></div>
+                <div class="indent"><span class="key">publish</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">adapter</span><span class="bracket">:</span> <span class="type">webhook</span></div>
+                <div class="indent2"><span class="key">config</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="key">url</span><span class="bracket">:</span> <span class="string">${SX_PUBLISH_WEBHOOK}</span></div>
+                <div><br></div>
+                <div><span class="key">preferences</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="key">timezone</span><span class="bracket">:</span> <span class="string">Africa/Nairobi</span></div>
+                <div class="indent"><span class="key">output_format</span><span class="bracket">:</span> <span class="string">markdown</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 2: Destinations -->
+    <section class="code-section reversed">
+        <div class="code-section-text">
+            <h2>CRM-agnostic delivery</h2>
+            <p>KAZI OS does not know what a CRM is. It knows what a destination is. You write adapters once, tenants declare which ones they use.</p>
+            <ul>
+                <li>Built-in adapters: Notion, Webhook, Email</li>
+                <li>Community adapters: Salesforce, HubSpot, Airtable</li>
+                <li>Custom adapters: extend BaseDestination in ~30 lines</li>
+                <li>Destinations are named keys — pipelines reference keys, not platforms</li>
+            </ul>
+        </div>
+        <div class="code-preview">
+            <div class="code-tabs">
+                <div class="code-tab active"><span class="code-tab-icon tab-pipeline">D</span> adapters/salesforce.py</div>
+            </div>
+            <div class="code-body">
+                <div><span class="key">from</span> <span class="type">kazi</span> <span class="key">import</span> <span class="type">BaseDestination</span></div>
+                <div><br></div>
+                <div><span class="key">class</span> <span class="type">SalesforceDestination</span>(<span class="type">BaseDestination</span>):</div>
+                <div class="indent"><span class="key">name</span> = <span class="string">"salesforce"</span></div>
+                <div><br></div>
+                <div class="indent"><span class="key">async def</span> <span class="type">push</span>(self, payload, context):</div>
+                <div class="indent2"><span class="comment"># Create record in Salesforce</span></div>
+                <div class="indent2"><span class="key">record</span> = <span class="key">await</span> self.client.create(</div>
+                <div class="indent3">object_type=self.config[<span class="string">"object_type"</span>],</div>
+                <div class="indent3">data=payload</div>
+                <div class="indent2">)</div>
+                <div class="indent2"><span class="key">return</span> DestinationReceipt(</div>
+                <div class="indent3">id=record.id,</div>
+                <div class="indent3">status=<span class="string">"delivered"</span></div>
+                <div class="indent2">)</div>
+                <div><br></div>
+                <div class="indent"><span class="key">async def</span> <span class="type">check_status</span>(self, receipt_id):</div>
+                <div class="indent2"><span class="key">return await</span> self.client.get_status(receipt_id)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 3: Multi-tenant Run -->
+    <section class="code-section">
+        <div class="code-section-text">
+            <h2>Run across all tenants at once</h2>
+            <p>One command runs the same pipeline for every configured tenant. Each run is isolated — scoped logs, scoped outputs, scoped secrets.</p>
+            <ul>
+                <li>Run all tenants: <code style="color: var(--accent-blue);">kazi run produce --all-tenants</code></li>
+                <li>Run one tenant: <code style="color: var(--accent-blue);">kazi run produce --tenant acme</code></li>
+                <li>Dry-run: <code style="color: var(--accent-blue);">kazi run produce --dry-run</code></li>
+                <li>Scoped logs per tenant for debugging</li>
+            </ul>
+        </div>
+        <div class="terminal-block">
+            <div class="terminal-header">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+            </div>
+            <div class="terminal-body">
+                <div><span class="prompt">$</span> kazi run produce --all-tenants</div>
+                <div><br></div>
+                <div><span class="info">▶ Pipeline:</span> produce (content domain)</div>
+                <div><span class="info">▶ Tenants:</span> 4 configured</div>
+                <div><br></div>
+                <div><span class="output">  [silicon-xchange] </span><span class="success">✓ complete</span><span class="output"> — 3 items published</span></div>
+                <div><span class="output">  [kazi54]          </span><span class="success">✓ complete</span><span class="output"> — 5 items published</span></div>
+                <div><span class="output">  [spokane-pulse]   </span><span class="warn">⏸ checkpoint</span><span class="output"> — awaiting approval</span></div>
+                <div><span class="output">  [acme-media]      </span><span class="success">✓ complete</span><span class="output"> — 2 items published</span></div>
+                <div><br></div>
+                <div><span class="success">✓ 3/4 complete.</span> 1 awaiting checkpoint approval.</div>
+                <div><span class="output">  Total items delivered: 10</span></div>
+                <div><span class="output">  Total run time: 4m 32s</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <h2>Built for multi-tenancy</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>Secret Isolation</h4>
+                <p>Tenant secrets resolve from environment variables at runtime. Never stored in config. Never cross boundaries.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Destination Routing</h4>
+                <p>Each tenant declares their own destinations. Same pipeline, different delivery targets. Zero code changes.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Scoped Logs</h4>
+                <p>Every pipeline run is tagged with org_id. Filter, query, and debug per tenant without noise.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Per-Tenant Scheduling</h4>
+                <p>Different tenants, different schedules. One runs daily at 6am, another weekly on Mondays. Same pipeline.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Adapter Registry</h4>
+                <p>Built-in adapters for Notion, Webhook, Email. Community adapters for Salesforce, HubSpot. Write your own in 30 lines.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Usage Tracking</h4>
+                <p>Per-tenant run counts, compute time, and output volume. Know what each client costs and produces.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="cta-code">$ kazi tenant add silicon-xchange --domain content</div>
+        <p>Add your first client in under a minute.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo"><div class="logo-icon">K</div> KAZI OS</a>
+                <p>Open source infrastructure for domain intelligence products. Scale what you know without rebuilding how you work.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Products</h5>
+                <ul>
+                    <li><a href="workflows.html">Workflows</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="cloud.html">Cloud</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Developers</h5>
+                <ul>
+                    <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                    <li><a href="https://docs.kazi.dev/api-reference" target="_blank">API Reference</a></li>
+                    <li><a href="changelog.html">Changelog</a></li>
+                    <li><a href="https://github.com/kazi54/KAZI" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Company</h5>
+                <ul>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="mailto:hello@kazi.dev">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 KAZI54 Ventures. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
+                <a href="https://github.com/kazi54/KAZI" target="_blank" class="pip-install">pip install kazi-os</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

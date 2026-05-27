@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports — KAZI OS</title>
+    <meta name="description" content="Generate structured, client-ready deliverables from your methodology. Your methodology becomes the template. Every output inherits it.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-left">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">K</div>
+                KAZI OS
+            </a>
+            <ul class="nav-links">
+                <li class="nav-dropdown">
+                    <span class="nav-dropdown-trigger">
+                        Products
+                        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4.5l3 3 3-3"/></svg>
+                    </span>
+                    <div class="nav-dropdown-menu">
+                        <a href="workflows.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-workflows">⚡</div>
+                            <div class="dropdown-item-text"><h4>Workflows</h4><p>Build repeatable agentic workflows from your domain blueprint.</p></div>
+                        </a>
+                        <a href="reports.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-reports">◈</div>
+                            <div class="dropdown-item-text"><h4>Reports</h4><p>Generate structured, client-ready deliverables from your methodology.</p></div>
+                        </a>
+                        <a href="cloud.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-cloud">☁</div>
+                            <div class="dropdown-item-text"><h4>Cloud</h4><p>Deploy your workflows across clients, teams, and systems.</p></div>
+                        </a>
+                    </div>
+                </li>
+                <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                <li><a href="changelog.html">Changelog</a></li>
+                <li><a href="blog.html">Blog</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <a href="https://github.com/kazi54/KAZI" target="_blank" class="nav-badge">Open Source ↗</a>
+            <a href="#" class="nav-signin">Sign in</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="product-hero">
+        <span class="badge badge-purple">◈ Reports</span>
+        <h1>Your methodology becomes the template.<br>Every output inherits it.</h1>
+        <p>Define scoring rubrics and delivery templates once. KAZI OS generates structured, client-ready deliverables on every pipeline run — consistent, auditable, and versioned.</p>
+        <a href="https://docs.kazi.dev/reports/overview" target="_blank" class="hero-cta">
+            Read the docs
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <h2>How it works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number step-purple">01</div>
+                <h3>Define your scoring rubric</h3>
+                <p>Declare dimensions, weights, and tier thresholds in scoring.yaml. This is your methodology as structured data.</p>
+            </div>
+            <div class="step">
+                <div class="step-number step-purple">02</div>
+                <h3>Create delivery templates</h3>
+                <p>Write Jinja2 templates that reference scoring data, tenant context, and pipeline outputs. One template, infinite outputs.</p>
+            </div>
+            <div class="step">
+                <div class="step-number step-purple">03</div>
+                <h3>Generate on every run</h3>
+                <p>The TemplateRenderer produces HTML, Markdown, JSON, or PDF — automatically, on every pipeline completion.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 1: Scoring -->
+    <section class="code-section">
+        <div class="code-section-text">
+            <h2>Scoring rubrics in YAML</h2>
+            <p>Multi-dimensional weighted scoring with configurable tiers. Change the rubric, every future output reflects the new methodology.</p>
+            <ul>
+                <li>Unlimited dimensions with custom weights</li>
+                <li>Tier thresholds route outputs (Publish / Revise / Rethink / Discard)</li>
+                <li>Scores are deterministic and auditable</li>
+                <li>Rubrics version with your domain — methodology evolves, history preserved</li>
+            </ul>
+        </div>
+        <div class="code-preview">
+            <div class="code-tabs">
+                <div class="code-tab active"><span class="code-tab-icon tab-scoring">S</span> scoring.yaml</div>
+            </div>
+            <div class="code-body">
+                <div><span class="key">dimensions</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="key">relevance</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">weight</span><span class="bracket">:</span> <span class="number">0.30</span></div>
+                <div class="indent2"><span class="key">description</span><span class="bracket">:</span> <span class="string">Alignment with audience needs</span></div>
+                <div class="indent"><span class="key">depth</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">weight</span><span class="bracket">:</span> <span class="number">0.25</span></div>
+                <div class="indent2"><span class="key">description</span><span class="bracket">:</span> <span class="string">Technical substance and insight</span></div>
+                <div class="indent"><span class="key">originality</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">weight</span><span class="bracket">:</span> <span class="number">0.25</span></div>
+                <div class="indent2"><span class="key">description</span><span class="bracket">:</span> <span class="string">Novel perspective or framing</span></div>
+                <div class="indent"><span class="key">actionability</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">weight</span><span class="bracket">:</span> <span class="number">0.20</span></div>
+                <div class="indent2"><span class="key">description</span><span class="bracket">:</span> <span class="string">Clear next steps for the reader</span></div>
+                <div><br></div>
+                <div><span class="key">tiers</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="bracket">-</span> <span class="key">name</span><span class="bracket">:</span> <span class="string">Publish</span>  <span class="key">min</span><span class="bracket">:</span> <span class="number">0.80</span></div>
+                <div class="indent"><span class="bracket">-</span> <span class="key">name</span><span class="bracket">:</span> <span class="string">Revise</span>   <span class="key">min</span><span class="bracket">:</span> <span class="number">0.60</span></div>
+                <div class="indent"><span class="bracket">-</span> <span class="key">name</span><span class="bracket">:</span> <span class="string">Rethink</span>  <span class="key">min</span><span class="bracket">:</span> <span class="number">0.40</span></div>
+                <div class="indent"><span class="bracket">-</span> <span class="key">name</span><span class="bracket">:</span> <span class="string">Discard</span>  <span class="key">min</span><span class="bracket">:</span> <span class="number">0.00</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 2: Templates -->
+    <section class="code-section reversed">
+        <div class="code-section-text">
+            <h2>Templates with full context</h2>
+            <p>Jinja2 templates have access to scoring results, pipeline outputs, tenant metadata, and run history. One template produces infinite variations.</p>
+            <ul>
+                <li>Access scoring breakdown per dimension</li>
+                <li>Conditional sections based on tier classification</li>
+                <li>Tenant-specific branding and context injection</li>
+                <li>Multi-format: HTML, Markdown, JSON, PDF</li>
+            </ul>
+        </div>
+        <div class="code-preview">
+            <div class="code-tabs">
+                <div class="code-tab active"><span class="code-tab-icon tab-template">T</span> templates/report_v1.html</div>
+            </div>
+            <div class="code-body">
+                <div><span class="bracket">&lt;</span><span class="key">h1</span><span class="bracket">&gt;</span>{{ tenant.name }} — {{ report.title }}<span class="bracket">&lt;/</span><span class="key">h1</span><span class="bracket">&gt;</span></div>
+                <div><br></div>
+                <div><span class="bracket">&lt;</span><span class="key">section</span> <span class="type">class</span>=<span class="string">"scoring"</span><span class="bracket">&gt;</span></div>
+                <div class="indent"><span class="bracket">{%</span> <span class="key">for</span> dim <span class="key">in</span> scoring.dimensions <span class="bracket">%}</span></div>
+                <div class="indent"><span class="bracket">&lt;</span><span class="key">div</span><span class="bracket">&gt;</span></div>
+                <div class="indent2">{{ dim.name }}: {{ dim.score }}/10</div>
+                <div class="indent2"><span class="comment">&lt;!-- Renders progress bar --&gt;</span></div>
+                <div class="indent"><span class="bracket">&lt;/</span><span class="key">div</span><span class="bracket">&gt;</span></div>
+                <div class="indent"><span class="bracket">{%</span> <span class="key">endfor</span> <span class="bracket">%}</span></div>
+                <div><span class="bracket">&lt;/</span><span class="key">section</span><span class="bracket">&gt;</span></div>
+                <div><br></div>
+                <div><span class="bracket">{%</span> <span class="key">if</span> scoring.tier == <span class="string">"Publish"</span> <span class="bracket">%}</span></div>
+                <div class="indent"><span class="bracket">&lt;</span><span class="key">div</span> <span class="type">class</span>=<span class="string">"approved"</span><span class="bracket">&gt;</span></div>
+                <div class="indent2"><span class="string">Ready for distribution.</span></div>
+                <div class="indent"><span class="bracket">&lt;/</span><span class="key">div</span><span class="bracket">&gt;</span></div>
+                <div><span class="bracket">{%</span> <span class="key">endif</span> <span class="bracket">%}</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 3: Output -->
+    <section class="code-section">
+        <div class="code-section-text">
+            <h2>Structured output, every run</h2>
+            <p>Every pipeline run produces a structured output file with full scoring breakdown, tier classification, and metadata. Query it, compare it, benchmark it.</p>
+            <ul>
+                <li>JSON output with complete scoring data</li>
+                <li>Rendered HTML/PDF for client delivery</li>
+                <li>Decision log: why this score, why this tier</li>
+                <li>Benchmark against historical runs</li>
+            </ul>
+        </div>
+        <div class="terminal-block">
+            <div class="terminal-header">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+            </div>
+            <div class="terminal-body">
+                <div><span class="prompt">$</span> kazi render --run run_2026_05_26_001 --format pdf</div>
+                <div><br></div>
+                <div><span class="info">▶ Template:</span> templates/report_v1.html</div>
+                <div><span class="info">▶ Scoring:</span> 4 dimensions, weighted total = 0.84</div>
+                <div><span class="info">▶ Tier:</span> <span class="success">Publish</span></div>
+                <div><br></div>
+                <div><span class="output">  relevance ......... 8.5/10 (weight: 0.30)</span></div>
+                <div><span class="output">  depth ............. 7.8/10 (weight: 0.25)</span></div>
+                <div><span class="output">  originality ....... 9.0/10 (weight: 0.25)</span></div>
+                <div><span class="output">  actionability ..... 8.2/10 (weight: 0.20)</span></div>
+                <div><br></div>
+                <div><span class="success">✓ Rendered:</span> output/report-2026-05-26.pdf (2.4 MB)</div>
+                <div><span class="success">✓ Delivered:</span> pushed to silicon-xchange → Notion</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <h2>Built for consistency</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>Multi-Dimensional Scoring</h4>
+                <p>Unlimited weighted dimensions. Each scored independently, combined into a single weighted total.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Tier Classification</h4>
+                <p>Configurable thresholds route outputs to different actions. Publish, revise, rethink, or discard.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Template Engine</h4>
+                <p>Jinja2 with full pipeline context. Conditionals, loops, filters. One template, infinite outputs.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Multi-Format Output</h4>
+                <p>HTML, Markdown, JSON, PDF. Same template, different renderers. Choose per tenant or per run.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Methodology Versioning</h4>
+                <p>Rubrics evolve with your domain. History preserved. Compare outputs across methodology versions.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Audit Trail</h4>
+                <p>Every score has a reason. Every tier has a threshold. Full decision log for compliance and review.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="cta-code">$ kazi init my-domain --with-scoring</div>
+        <p>Scaffold a domain with scoring rubrics and report templates included.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo"><div class="logo-icon">K</div> KAZI OS</a>
+                <p>Open source infrastructure for domain intelligence products. Scale what you know without rebuilding how you work.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Products</h5>
+                <ul>
+                    <li><a href="workflows.html">Workflows</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="cloud.html">Cloud</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Developers</h5>
+                <ul>
+                    <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                    <li><a href="https://docs.kazi.dev/api-reference" target="_blank">API Reference</a></li>
+                    <li><a href="changelog.html">Changelog</a></li>
+                    <li><a href="https://github.com/kazi54/KAZI" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Company</h5>
+                <ul>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="mailto:hello@kazi.dev">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 KAZI54 Ventures. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
+                <a href="https://github.com/kazi54/KAZI" target="_blank" class="pip-install">pip install kazi-os</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

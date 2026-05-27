@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAZI OS — Best-in-class workflows for operators and agents</title>
+    <meta name="description" content="KAZI OS turns your domain blueprint into production-ready workflows, structured reports, and client-specific delivery — so expert teams can scale what they know without rebuilding how they work.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-left">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">K</div>
+                KAZI OS
+            </a>
+            <ul class="nav-links">
+                <li class="nav-dropdown">
+                    <span class="nav-dropdown-trigger">
+                        Products
+                        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 4.5l3 3 3-3"/>
+                        </svg>
+                    </span>
+                    <div class="nav-dropdown-menu">
+                        <a href="workflows.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-workflows">⚡</div>
+                            <div class="dropdown-item-text">
+                                <h4>Workflows</h4>
+                                <p>Build repeatable agentic workflows from your domain blueprint.</p>
+                            </div>
+                        </a>
+                        <a href="reports.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-reports">◈</div>
+                            <div class="dropdown-item-text">
+                                <h4>Reports</h4>
+                                <p>Generate structured, client-ready deliverables from your methodology.</p>
+                            </div>
+                        </a>
+                        <a href="cloud.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-cloud">☁</div>
+                            <div class="dropdown-item-text">
+                                <h4>Cloud</h4>
+                                <p>Deploy your workflows across clients, teams, and systems.</p>
+                            </div>
+                        </a>
+                    </div>
+                </li>
+                <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                <li><a href="changelog.html">Changelog</a></li>
+                <li><a href="blog.html">Blog</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <a href="https://github.com/kazi54/KAZI" target="_blank" class="nav-badge">Open Source ↗</a>
+            <a href="#" class="nav-signin">Sign in</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Best-in-class workflows<br>for operators and agents</h1>
+            <p>
+                Great AI services are built on great infrastructure.
+                KAZI OS turns your domain blueprint into production-ready
+                <a href="workflows.html">workflows</a>, structured <a href="reports.html">reports</a>,
+                and client-specific <a href="cloud.html">delivery</a> — so expert teams
+                can scale what they know without rebuilding how they work.
+            </p>
+            <a href="workflows.html" class="hero-cta">
+                Get started
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8h10M9 4l4 4-4 4"/>
+                </svg>
+            </a>
+        </div>
+
+        <div class="code-preview">
+            <div class="code-tabs">
+                <div class="code-tab active" data-tab="manifest">
+                    <span class="code-tab-icon tab-manifest">M</span>
+                    manifest.yaml
+                </div>
+                <div class="code-tab" data-tab="tenant">
+                    <span class="code-tab-icon tab-tenant">T</span>
+                    tenant.yaml
+                </div>
+                <div class="code-tab" data-tab="pipeline">
+                    <span class="code-tab-icon tab-pipeline">P</span>
+                    pipeline.py
+                </div>
+            </div>
+            <div class="code-body" id="code-manifest">
+                <div><span class="comment"># domain manifest — your expertise as config</span></div>
+                <div><span class="key">domain</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="key">name</span><span class="bracket">:</span> <span class="string">content</span></div>
+                <div class="indent"><span class="key">version</span><span class="bracket">:</span> <span class="value">1.0.0</span></div>
+                <div><br></div>
+                <div><span class="key">pipelines</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="key">produce</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">stages</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">agent</span><span class="bracket">:</span> <span class="type">content_scout</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">agent</span><span class="bracket">:</span> <span class="type">content_scorer</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">agent</span><span class="bracket">:</span> <span class="type">content_compiler</span></div>
+                <div class="indent2"><span class="key">trigger</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="key">type</span><span class="bracket">:</span> <span class="string">scheduled</span></div>
+                <div class="indent3"><span class="key">cron</span><span class="bracket">:</span> <span class="string">"0 6 * * 1,4"</span></div>
+            </div>
+            <div class="code-body hidden" id="code-tenant">
+                <div><span class="comment"># tenant config — one per client</span></div>
+                <div><span class="key">org_id</span><span class="bracket">:</span> <span class="string">silicon-xchange</span></div>
+                <div><span class="key">name</span><span class="bracket">:</span> <span class="string">Silicon Xchange</span></div>
+                <div><span class="key">domain</span><span class="bracket">:</span> <span class="string">content</span></div>
+                <div><br></div>
+                <div><span class="key">destinations</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="key">review</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">adapter</span><span class="bracket">:</span> <span class="type">notion</span></div>
+                <div class="indent2"><span class="key">config</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="key">workspace</span><span class="bracket">:</span> <span class="string">${NOTION_WORKSPACE}</span></div>
+                <div class="indent"><span class="key">publish</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">adapter</span><span class="bracket">:</span> <span class="type">webhook</span></div>
+                <div class="indent2"><span class="key">config</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="key">url</span><span class="bracket">:</span> <span class="string">${PUBLISH_WEBHOOK}</span></div>
+            </div>
+            <div class="code-body hidden" id="code-pipeline">
+                <div><span class="comment"># what KAZI OS generates from your manifest</span></div>
+                <div><span class="key">from</span> <span class="type">kazi</span> <span class="key">import</span> <span class="type">Pipeline</span>, <span class="type">run</span></div>
+                <div><br></div>
+                <div><span class="type">pipeline</span> = <span class="type">Pipeline</span>.<span class="key">from_manifest</span>(</div>
+                <div class="indent"><span class="string">"./manifest.yaml"</span></div>
+                <div>)</div>
+                <div><br></div>
+                <div><span class="comment"># run for a specific tenant</span></div>
+                <div><span class="type">result</span> = <span class="key">await</span> <span class="type">run</span>(</div>
+                <div class="indent"><span class="type">pipeline</span>,</div>
+                <div class="indent"><span class="key">tenant</span>=<span class="string">"silicon-xchange"</span></div>
+                <div>)</div>
+                <div><br></div>
+                <div><span class="key">print</span>(<span class="type">result</span>.<span class="key">status</span>)  <span class="comment"># "completed"</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Three Things -->
+    <section class="three-things">
+        <div class="three-things-grid">
+            <div class="thing">
+                <div class="thing-icon">⚡</div>
+                <h3><span>Workflows</span> — Build repeatable agentic workflows from your domain blueprint.</h3>
+                <p>Define your agents, stages, and triggers in YAML. KAZI OS builds the workflow, wires the orchestrator, and handles retries, fan-out, and checkpoints automatically.</p>
+                <a href="workflows.html" class="thing-link">
+                    Explore Workflows
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </a>
+            </div>
+            <div class="thing">
+                <div class="thing-icon">◈</div>
+                <h3><span>Reports</span> — Generate structured, client-ready deliverables from your methodology.</h3>
+                <p>Scoring dimensions, delivery templates, and output formats stay in sync with your domain config. Change the rubric, every future report inherits it.</p>
+                <a href="reports.html" class="thing-link">
+                    Explore Reports
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </a>
+            </div>
+            <div class="thing">
+                <div class="thing-icon">☁</div>
+                <h3><span>Cloud</span> — Deploy your workflows across clients, teams, and systems.</h3>
+                <p>Each client gets their own config, their own destinations, their own secrets. Notion, Salesforce, Airtable, or a webhook — KAZI OS routes to whatever they use.</p>
+                <a href="cloud.html" class="thing-link">
+                    Explore Cloud
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo">
+                    <div class="logo-icon">K</div>
+                    KAZI OS
+                </a>
+                <p>Open source infrastructure for domain intelligence products. Scale what you know without rebuilding how you work.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Products</h5>
+                <ul>
+                    <li><a href="workflows.html">Workflows</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="cloud.html">Cloud</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Developers</h5>
+                <ul>
+                    <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                    <li><a href="https://docs.kazi.dev/api-reference" target="_blank">API Reference</a></li>
+                    <li><a href="changelog.html">Changelog</a></li>
+                    <li><a href="https://github.com/kazi54/KAZI" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Company</h5>
+                <ul>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="mailto:hello@kazi.dev">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 KAZI54 Ventures. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
+                <a href="https://github.com/kazi54/KAZI" target="_blank" class="pip-install">pip install kazi-os</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Tab switching for code preview
+        document.querySelectorAll('.code-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active from all tabs
+                document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+                // Hide all code bodies
+                document.querySelectorAll('.code-body').forEach(b => b.classList.add('hidden'));
+                // Activate clicked tab
+                tab.classList.add('active');
+                // Show corresponding code body
+                const target = tab.dataset.tab;
+                document.getElementById(`code-${target}`).classList.remove('hidden');
+            });
+        });
+    </script>
+
+</body>
+</html>

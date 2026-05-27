@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflows — KAZI OS</title>
+    <meta name="description" content="Build repeatable agentic workflows from your domain blueprint. Define once. Run everywhere. Scale without rewriting.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-left">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">K</div>
+                KAZI OS
+            </a>
+            <ul class="nav-links">
+                <li class="nav-dropdown">
+                    <span class="nav-dropdown-trigger">
+                        Products
+                        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4.5l3 3 3-3"/></svg>
+                    </span>
+                    <div class="nav-dropdown-menu">
+                        <a href="workflows.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-workflows">⚡</div>
+                            <div class="dropdown-item-text"><h4>Workflows</h4><p>Build repeatable agentic workflows from your domain blueprint.</p></div>
+                        </a>
+                        <a href="reports.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-reports">◈</div>
+                            <div class="dropdown-item-text"><h4>Reports</h4><p>Generate structured, client-ready deliverables from your methodology.</p></div>
+                        </a>
+                        <a href="cloud.html" class="dropdown-item">
+                            <div class="dropdown-item-icon icon-cloud">☁</div>
+                            <div class="dropdown-item-text"><h4>Cloud</h4><p>Deploy your workflows across clients, teams, and systems.</p></div>
+                        </a>
+                    </div>
+                </li>
+                <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                <li><a href="changelog.html">Changelog</a></li>
+                <li><a href="blog.html">Blog</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <a href="https://github.com/kazi54/KAZI" target="_blank" class="nav-badge">Open Source ↗</a>
+            <a href="#" class="nav-signin">Sign in</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="product-hero">
+        <span class="badge">⚡ Workflows</span>
+        <h1>Define once. Run everywhere.<br>Scale without rewriting.</h1>
+        <p>Your domain expertise becomes a manifest. KAZI OS reads it and builds the pipeline — agents, stages, triggers, retries, and human-in-the-loop checkpoints. No orchestration code required.</p>
+        <a href="https://docs.kazi.dev/workflows/overview" target="_blank" class="hero-cta">
+            Read the docs
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <h2>How it works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">01</div>
+                <h3>Define your manifest</h3>
+                <p>Declare your agents, pipelines, stages, and triggers in a single YAML file. This is your domain expertise as config.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">02</div>
+                <h3>KAZI OS builds the pipeline</h3>
+                <p>The PipelineBuilder reads your manifest, discovers agents from your domain directory, and wires the orchestration automatically.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">03</div>
+                <h3>Run, pause, resume</h3>
+                <p>Execute on-demand or on schedule. Pipelines pause at human checkpoints, wait for approval, then resume automatically.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 1: Define -->
+    <section class="code-section">
+        <div class="code-section-text">
+            <h2>Define your workflow in YAML</h2>
+            <p>No Python orchestration code. No DAG builders. Just declare what agents run, in what order, with what triggers.</p>
+            <ul>
+                <li>Agents are referenced by name — auto-discovered from your domain</li>
+                <li>Stages run sequentially with typed input/output contracts</li>
+                <li>Human checkpoints pause the pipeline until approved</li>
+                <li>Triggers fire on schedule, on-demand, or on event</li>
+            </ul>
+        </div>
+        <div class="code-preview">
+            <div class="code-tabs">
+                <div class="code-tab active"><span class="code-tab-icon tab-manifest">M</span> manifest.yaml</div>
+            </div>
+            <div class="code-body">
+                <div><span class="key">pipelines</span><span class="bracket">:</span></div>
+                <div class="indent"><span class="key">produce</span><span class="bracket">:</span></div>
+                <div class="indent2"><span class="key">description</span><span class="bracket">:</span> <span class="string">Weekly content production</span></div>
+                <div class="indent2"><span class="key">stages</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">agent</span><span class="bracket">:</span> <span class="type">content_scout</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">agent</span><span class="bracket">:</span> <span class="type">content_scorer</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">checkpoint</span><span class="bracket">:</span> <span class="string">approve_topics</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">agent</span><span class="bracket">:</span> <span class="type">content_compiler</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">checkpoint</span><span class="bracket">:</span> <span class="string">approve_draft</span></div>
+                <div class="indent3"><span class="bracket">-</span> <span class="key">agent</span><span class="bracket">:</span> <span class="type">content_distributor</span></div>
+                <div class="indent2"><span class="key">trigger</span><span class="bracket">:</span></div>
+                <div class="indent3"><span class="key">type</span><span class="bracket">:</span> <span class="string">scheduled</span></div>
+                <div class="indent3"><span class="key">cron</span><span class="bracket">:</span> <span class="string">"0 6 * * 1,4"</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 2: Agents -->
+    <section class="code-section reversed">
+        <div class="code-section-text">
+            <h2>Agents are just Python classes</h2>
+            <p>Extend BaseAgent. Implement one method. KAZI OS handles discovery, typing, validation, retries, and logging.</p>
+            <ul>
+                <li>Four agent types: research, evaluation, synthesis, delivery</li>
+                <li>Typed input/output contracts with Pydantic</li>
+                <li>Built-in retry with exponential backoff</li>
+                <li>Automatic execution timing and structured logging</li>
+            </ul>
+        </div>
+        <div class="code-preview">
+            <div class="code-tabs">
+                <div class="code-tab active"><span class="code-tab-icon tab-pipeline">A</span> agents/content_scout.py</div>
+            </div>
+            <div class="code-body">
+                <div><span class="key">from</span> <span class="type">kazi</span> <span class="key">import</span> <span class="type">BaseAgent</span>, <span class="type">AgentContext</span></div>
+                <div><br></div>
+                <div><span class="key">class</span> <span class="type">ContentScout</span>(<span class="type">BaseAgent</span>):</div>
+                <div class="indent"><span class="key">name</span> = <span class="string">"content_scout"</span></div>
+                <div class="indent"><span class="key">type</span> = <span class="string">"research"</span></div>
+                <div><br></div>
+                <div class="indent"><span class="key">async def</span> <span class="type">execute</span>(self, context: <span class="type">AgentContext</span>):</div>
+                <div class="indent2"><span class="comment"># Your domain logic here</span></div>
+                <div class="indent2"><span class="key">sources</span> = <span class="key">await</span> self.scan(</div>
+                <div class="indent3">context.config[<span class="string">"sources"</span>]</div>
+                <div class="indent2">)</div>
+                <div class="indent2"><span class="key">return</span> {<span class="string">"items"</span>: sources}</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section 3: Run -->
+    <section class="code-section">
+        <div class="code-section-text">
+            <h2>Run from CLI, API, or MCP</h2>
+            <p>Four interfaces to the same platform. Choose what fits your workflow — terminal, HTTP, Python, or AI-native.</p>
+            <ul>
+                <li>CLI for operators: <code style="color: var(--accent-green);">kazi run produce</code></li>
+                <li>API for integrations: <code style="color: var(--accent-green);">POST /api/run</code></li>
+                <li>Python for scripts: <code style="color: var(--accent-green);">await pipeline.run()</code></li>
+                <li>MCP for AI agents: Claude, GPT, or any model</li>
+            </ul>
+        </div>
+        <div class="terminal-block">
+            <div class="terminal-header">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+            </div>
+            <div class="terminal-body">
+                <div><span class="prompt">$</span> kazi run produce --tenant silicon-xchange</div>
+                <div><br></div>
+                <div><span class="info">▶ Pipeline:</span> produce (content domain)</div>
+                <div><span class="info">▶ Tenant:</span> silicon-xchange</div>
+                <div><br></div>
+                <div><span class="output">  [1/4] content_scout ........... </span><span class="success">✓ 12 items found</span></div>
+                <div><span class="output">  [2/4] content_scorer .......... </span><span class="success">✓ 5 above threshold</span></div>
+                <div><span class="output">  [3/4] </span><span class="warn">⏸ checkpoint: approve_topics</span></div>
+                <div><span class="output">        → pushed to Notion (silicon-xchange workspace)</span></div>
+                <div><span class="output">        → waiting for approval...</span></div>
+                <div><br></div>
+                <div><span class="prompt">$</span> kazi resume produce --approve</div>
+                <div><br></div>
+                <div><span class="output">  [3/4] </span><span class="success">✓ approved — resuming</span></div>
+                <div><span class="output">  [4/4] content_compiler ....... </span><span class="success">✓ draft generated</span></div>
+                <div><br></div>
+                <div><span class="success">✓ Pipeline complete.</span> Run ID: run_2026_05_26_001</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <h2>Built for production</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>Sequential & Parallel</h4>
+                <p>Stages run in order by default. Use FanOut for parallel execution with concurrency control.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Human-in-the-Loop</h4>
+                <p>Pipelines pause at checkpoints. Approve via CLI, API, Notion status change, or MCP tool call.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Retry & Backoff</h4>
+                <p>Exponential backoff with jitter. Circuit breaker for persistent failures. Configurable per stage.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Scoring System</h4>
+                <p>Multi-dimensional weighted scoring with configurable tiers. Agents score, pipelines route by tier.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Agent Discovery</h4>
+                <p>Drop a Python file in your domain's agents/ directory. KAZI OS finds it, registers it, wires it.</p>
+            </div>
+            <div class="feature-card">
+                <h4>State Persistence</h4>
+                <p>Every run is saved. Resume from any stage. Retry failed runs. Full decision log for auditing.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="cta-code">$ pip install kazi-os && kazi init my-domain</div>
+        <p>Start building your first workflow in under 5 minutes.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="index.html" class="logo"><div class="logo-icon">K</div> KAZI OS</a>
+                <p>Open source infrastructure for domain intelligence products. Scale what you know without rebuilding how you work.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Products</h5>
+                <ul>
+                    <li><a href="workflows.html">Workflows</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="cloud.html">Cloud</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Developers</h5>
+                <ul>
+                    <li><a href="https://docs.kazi.dev" target="_blank">Documentation</a></li>
+                    <li><a href="https://docs.kazi.dev/api-reference" target="_blank">API Reference</a></li>
+                    <li><a href="changelog.html">Changelog</a></li>
+                    <li><a href="https://github.com/kazi54/KAZI" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Company</h5>
+                <ul>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="mailto:hello@kazi.dev">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 KAZI54 Ventures. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
+                <a href="https://github.com/kazi54/KAZI" target="_blank" class="pip-install">pip install kazi-os</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
