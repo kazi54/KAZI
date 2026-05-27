@@ -78,6 +78,15 @@
       ]
     },
     {
+      "group": "MCP",
+      "pages": [
+        "mcp/overview",
+        "mcp/tools",
+        "mcp/resources",
+        "mcp/prompts"
+      ]
+    },
+    {
       "group": "API Reference",
       "pages": [
         "api-reference/cli",

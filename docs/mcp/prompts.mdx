@@ -1,0 +1,195 @@
+---
+title: "MCP Prompts"
+description: "Pre-built prompt templates for common KAZI OS workflows"
+---
+
+# Prompts Reference
+
+Prompts are pre-built workflow templates that AI models can use to accomplish complex multi-step tasks with KAZI OS. They combine tool calls and resource reads into coherent workflows.
+
+## How Prompts Work
+
+When an AI model selects a prompt, it receives a structured template with:
+- Context about what the workflow accomplishes
+- Required arguments to customize the workflow
+- A sequence of steps combining tools and resources
+
+The model then executes the workflow, adapting to results at each step.
+
+---
+
+## Available Prompts
+
+### analyze_pipeline_run
+
+Analyze a completed or failed pipeline run for performance insights and bottlenecks.
+
+**Arguments:**
+
+<ParamField path="run_id" type="string" required>
+  The run ID to analyze
+</ParamField>
+
+**What the model does:**
+1. Reads `kazi://runs/{run_id}` to get full run state
+2. Identifies the slowest stages and any failures
+3. Reads `kazi://manifests/{domain}` for pipeline context
+4. Produces a structured analysis with:
+   - Stage-by-stage timing breakdown
+   - Bottleneck identification
+   - Failure root cause (if applicable)
+   - Optimization recommendations
+
+**Example use:**
+> "Analyze the last pipeline run for Silicon Xchange — it took longer than usual."
+
+---
+
+### draft_tenant_config
+
+Generate a complete tenant.yaml configuration for a new client based on their requirements.
+
+**Arguments:**
+
+<ParamField path="org_name" type="string" required>
+  Name of the organization
+</ParamField>
+
+<ParamField path="domain" type="string" required>
+  Domain to associate with (e.g., "content", "ip-intelligence")
+</ParamField>
+
+<ParamField path="crm" type="string" required>
+  Their CRM platform (e.g., "notion", "salesforce", "hubspot", "airtable")
+</ParamField>
+
+<ParamField path="requirements" type="string">
+  Any additional requirements or preferences
+</ParamField>
+
+**What the model does:**
+1. Reads `kazi://tenants/_template` for the schema
+2. Reads an existing tenant config for reference
+3. Generates a complete tenant.yaml with:
+   - Appropriate org_id (slugified name)
+   - Destination configuration for their CRM
+   - Sensible defaults for preferences
+   - Placeholder secrets with naming conventions
+4. Validates the config with `kazi_validate_config`
+
+**Example use:**
+> "Create a tenant config for Acme Media. They use HubSpot and want weekly runs on Mondays at 9am EST."
+
+---
+
+### debug_failed_run
+
+Diagnose why a pipeline run failed and suggest fixes.
+
+**Arguments:**
+
+<ParamField path="run_id" type="string" required>
+  The failed run ID
+</ParamField>
+
+**What the model does:**
+1. Reads `kazi://runs/{run_id}` to get the failure state
+2. Identifies the failed stage and error message
+3. Reads the domain manifest for pipeline context
+4. Reads the tenant config for destination/secret context
+5. Produces a diagnosis with:
+   - Root cause analysis
+   - Whether it is a config issue, API issue, or logic issue
+   - Specific fix recommendation
+   - Whether to retry or fix-then-retry
+
+**Example use:**
+> "The produce pipeline failed for silicon-xchange this morning. What happened?"
+
+---
+
+### design_scoring_rubric
+
+Design a multi-dimensional scoring system for any domain.
+
+**Arguments:**
+
+<ParamField path="domain_description" type="string" required>
+  Description of what is being scored
+</ParamField>
+
+<ParamField path="num_dimensions" type="integer" default="5">
+  Number of scoring dimensions
+</ParamField>
+
+<ParamField path="use_case" type="string">
+  How the scores will be used (e.g., "filter content for publishing", "rank patents for licensing")
+</ParamField>
+
+**What the model does:**
+1. Reads an existing `kazi://scoring/{domain}` for structural reference
+2. Designs dimensions with:
+   - Names and descriptions
+   - Weight distribution (must sum to 1.0)
+   - Tier thresholds with action labels
+3. Validates the rubric structure
+4. Outputs a complete `scoring.yaml` ready to use
+
+**Example use:**
+> "Design a scoring rubric for evaluating podcast episode ideas. I want to filter for episodes that will drive subscriber growth."
+
+---
+
+### create_domain_manifest
+
+Generate a complete domain manifest from a business description.
+
+**Arguments:**
+
+<ParamField path="business_description" type="string" required>
+  What the business does and what workflows it needs
+</ParamField>
+
+<ParamField path="agents_needed" type="string">
+  Description of the types of agents needed
+</ParamField>
+
+<ParamField path="output_types" type="string">
+  What the pipeline should produce
+</ParamField>
+
+**What the model does:**
+1. Reads `kazi://manifests/_template` for the schema
+2. Analyzes the business description to identify:
+   - Domain name and version
+   - Required agent types (research, evaluation, synthesis, delivery)
+   - Pipeline stages and their order
+   - HITL checkpoints (where human review is needed)
+   - Trigger types (scheduled, on-demand, event-driven)
+3. Generates a complete `manifest.yaml`
+4. Validates with `kazi_validate_config`
+
+**Example use:**
+> "I run a patent licensing consultancy. I need to ingest patents, score them for commercial viability, match them to potential licensees, and produce audit reports. Create a domain manifest for this."
+
+---
+
+## Using Prompts Programmatically
+
+Prompts can also be invoked via the MCP protocol directly:
+
+```python
+from mcp import ClientSession
+
+async with ClientSession(server) as session:
+    result = await session.get_prompt(
+        "create_domain_manifest",
+        arguments={
+            "business_description": "Local newsletter business...",
+            "agents_needed": "content scout, writer, distributor",
+            "output_types": "newsletter, social posts"
+        }
+    )
+```
+
+The returned prompt messages can then be passed to any LLM for execution.

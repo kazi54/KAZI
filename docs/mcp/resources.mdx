@@ -1,0 +1,211 @@
+---
+title: "MCP Resources"
+description: "Data resources exposed by the KAZI OS MCP server"
+---
+
+# Resources Reference
+
+Resources are read-only data that AI models can access through the KAZI OS MCP server. They provide context for decision-making without requiring tool calls.
+
+## How Resources Work
+
+AI models request resources by URI. KAZI OS returns the content as structured text (YAML or JSON) that the model can read and reason about.
+
+```
+Model: "I need to understand the content domain's scoring rubric."
+→ Reads: kazi://scoring/content
+→ Gets: Full scoring.yaml content
+→ Can now make informed scoring decisions
+```
+
+---
+
+## Available Resources
+
+### kazi://manifests/{domain}
+
+Returns the full manifest.yaml for a domain.
+
+**URI Pattern:** `kazi://manifests/{domain_name}`
+
+**Example:** `kazi://manifests/content`
+
+**Returns:**
+```yaml
+domain:
+  name: content
+  version: "1.0.0"
+  description: Content production pipeline
+
+agents:
+  - name: scout
+    type: research
+  - name: scorer
+    type: evaluation
+  - name: compiler
+    type: synthesis
+
+pipelines:
+  produce:
+    stages:
+      - agent: scout
+      - agent: scorer
+      - checkpoint: approve_draft
+      - agent: compiler
+```
+
+**Use cases:**
+- Understanding what agents and pipelines exist in a domain
+- Validating pipeline configurations before running
+- Generating new manifests based on existing patterns
+
+---
+
+### kazi://scoring/{domain}
+
+Returns the scoring.yaml configuration for a domain.
+
+**URI Pattern:** `kazi://scoring/{domain_name}`
+
+**Example:** `kazi://scoring/content`
+
+**Returns:**
+```yaml
+dimensions:
+  - name: originality
+    weight: 0.25
+    description: Novel perspective or unique angle
+  - name: relevance
+    weight: 0.30
+    description: Alignment with target audience interests
+  - name: depth
+    weight: 0.20
+    description: Thoroughness of analysis
+  - name: clarity
+    weight: 0.15
+    description: Readability and structure
+  - name: actionability
+    weight: 0.10
+    description: Practical takeaways for the reader
+
+tiers:
+  - name: Publish
+    min_score: 8.0
+  - name: Revise
+    min_score: 6.0
+  - name: Rethink
+    min_score: 4.0
+  - name: Discard
+    min_score: 0.0
+```
+
+**Use cases:**
+- Understanding how items are evaluated
+- Designing new scoring rubrics based on existing ones
+- Explaining scoring decisions to users
+
+---
+
+### kazi://tenants/{org_id}
+
+Returns the tenant configuration for a specific organization.
+
+**URI Pattern:** `kazi://tenants/{org_id}`
+
+**Example:** `kazi://tenants/silicon-xchange`
+
+**Returns:**
+```yaml
+org_id: silicon-xchange
+display_name: Silicon Xchange
+domain: content
+
+destinations:
+  review:
+    adapter: notion
+    config:
+      workspace: "sx-workspace-id"
+      database: "sx-drafts-db"
+  publish:
+    adapter: webhook
+    config:
+      url: "https://api.siliconxchange.com/publish"
+
+preferences:
+  timezone: Africa/Nairobi
+  output_format: markdown
+  schedule: "0 6 * * 1"
+```
+
+<Note>
+Secrets (values like `${ENV_VAR}`) are redacted in resource responses. Only resolved values are used during pipeline execution.
+</Note>
+
+**Use cases:**
+- Understanding a tenant's configuration before running pipelines
+- Debugging delivery issues (wrong adapter? wrong config?)
+- Drafting new tenant configs based on existing ones
+
+---
+
+### kazi://runs/{run_id}
+
+Returns the full state of a pipeline run.
+
+**URI Pattern:** `kazi://runs/{run_id}`
+
+**Example:** `kazi://runs/run_20260526_produce_sx`
+
+**Returns:**
+```json
+{
+  "run_id": "run_20260526_produce_sx",
+  "pipeline": "produce",
+  "tenant": "silicon-xchange",
+  "status": "checkpoint_pending",
+  "started_at": "2026-05-26T06:00:00Z",
+  "current_stage": "approve_draft",
+  "stages": {
+    "scout": {
+      "status": "complete",
+      "duration_ms": 12400,
+      "output_keys": ["topics_found", "sources_collected"]
+    },
+    "scorer": {
+      "status": "complete",
+      "duration_ms": 8200,
+      "output_keys": ["scored_items", "tier_distribution"]
+    },
+    "approve_draft": {
+      "status": "pending",
+      "checkpoint_type": "human",
+      "destination": "review"
+    }
+  },
+  "decisions": [
+    {
+      "stage": "scorer",
+      "decision": "3 items scored Publish, 1 scored Revise",
+      "timestamp": "2026-05-26T06:00:20Z"
+    }
+  ]
+}
+```
+
+**Use cases:**
+- Monitoring pipeline progress
+- Debugging failed or stalled runs
+- Analyzing performance bottlenecks
+- Making informed decisions about checkpoint approval
+
+---
+
+## Resource Discovery
+
+AI models can list all available resources by calling:
+
+```
+list_resources()
+```
+
+This returns all registered URI templates with descriptions, allowing the model to discover what data is available without prior knowledge.

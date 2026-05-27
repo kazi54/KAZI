@@ -1,0 +1,267 @@
+---
+title: "MCP Tools"
+description: "All 11 tools exposed by the KAZI OS MCP server"
+---
+
+# Tools Reference
+
+Tools are actions that AI models can perform through the KAZI OS MCP server. Each tool maps to a platform operation.
+
+## Pipeline Operations
+
+### kazi_run_pipeline
+
+Execute a pipeline for a specific tenant.
+
+<ParamField path="pipeline_name" type="string" required>
+  Name of the pipeline to run (as defined in manifest.yaml)
+</ParamField>
+
+<ParamField path="tenant" type="string" required>
+  Tenant org_id to scope the run
+</ParamField>
+
+<ParamField path="dry_run" type="boolean" default="false">
+  If true, validates the pipeline without executing
+</ParamField>
+
+<ParamField path="input_data" type="object">
+  Optional input data to pass to the first stage
+</ParamField>
+
+**Example:**
+```json
+{
+  "pipeline_name": "produce",
+  "tenant": "silicon-xchange",
+  "dry_run": false
+}
+```
+
+**Returns:** Run ID, status, and stage results.
+
+---
+
+### kazi_resume_checkpoint
+
+Approve or reject a human-in-the-loop checkpoint.
+
+<ParamField path="run_id" type="string" required>
+  The run ID containing the checkpoint
+</ParamField>
+
+<ParamField path="checkpoint_name" type="string" required>
+  Name of the checkpoint to resolve
+</ParamField>
+
+<ParamField path="decision" type="string" required>
+  Either "approve" or "reject"
+</ParamField>
+
+<ParamField path="notes" type="string">
+  Optional reviewer notes
+</ParamField>
+
+**Example:**
+```json
+{
+  "run_id": "run_abc123",
+  "checkpoint_name": "approve_draft",
+  "decision": "approve",
+  "notes": "Looks good, publish as-is."
+}
+```
+
+---
+
+### kazi_retry_run
+
+Retry a failed pipeline run from a specific stage.
+
+<ParamField path="run_id" type="string" required>
+  The failed run ID
+</ParamField>
+
+<ParamField path="from_stage" type="string">
+  Stage to retry from (defaults to the failed stage)
+</ParamField>
+
+**Example:**
+```json
+{
+  "run_id": "run_abc123",
+  "from_stage": "score"
+}
+```
+
+---
+
+### kazi_get_run_status
+
+Check the current status of a pipeline run.
+
+<ParamField path="run_id" type="string" required>
+  The run ID to check
+</ParamField>
+
+**Returns:** Run status, current stage, elapsed time, and stage results.
+
+---
+
+### kazi_list_pipelines
+
+List all available pipelines across loaded domains.
+
+<ParamField path="domain" type="string">
+  Filter by domain name (optional)
+</ParamField>
+
+**Returns:** Array of pipeline names, domains, and stage counts.
+
+---
+
+## Scoring Operations
+
+### kazi_score
+
+Score an item against a domain's scoring rubric.
+
+<ParamField path="domain" type="string" required>
+  Domain whose scoring.yaml to use
+</ParamField>
+
+<ParamField path="item" type="object" required>
+  The item to score (key-value pairs matching dimension inputs)
+</ParamField>
+
+**Example:**
+```json
+{
+  "domain": "content",
+  "item": {
+    "originality": 8,
+    "relevance": 9,
+    "depth": 7,
+    "clarity": 8,
+    "actionability": 6
+  }
+}
+```
+
+**Returns:** Weighted score, tier classification, per-dimension breakdown.
+
+---
+
+## Configuration Operations
+
+### kazi_validate_config
+
+Validate any KAZI OS configuration file.
+
+<ParamField path="file_type" type="string" required>
+  Type of config: "manifest", "scoring", or "tenant"
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  YAML content to validate
+</ParamField>
+
+**Returns:** Validation result with errors/warnings if any.
+
+---
+
+### kazi_add_tenant
+
+Create a new tenant configuration.
+
+<ParamField path="org_id" type="string" required>
+  Unique identifier for the tenant
+</ParamField>
+
+<ParamField path="display_name" type="string" required>
+  Human-readable tenant name
+</ParamField>
+
+<ParamField path="domain" type="string" required>
+  Domain to associate the tenant with
+</ParamField>
+
+<ParamField path="destinations" type="object">
+  Destination configuration (adapter + config per key)
+</ParamField>
+
+**Example:**
+```json
+{
+  "org_id": "acme-media",
+  "display_name": "Acme Media",
+  "domain": "content",
+  "destinations": {
+    "review": {
+      "adapter": "notion",
+      "config": { "workspace": "acme-workspace-id" }
+    }
+  }
+}
+```
+
+---
+
+### kazi_list_tenants
+
+List all configured tenants.
+
+<ParamField path="domain" type="string">
+  Filter by domain (optional)
+</ParamField>
+
+**Returns:** Array of tenant org_ids, display names, and domains.
+
+---
+
+## Delivery Operations
+
+### kazi_render_report
+
+Render a report from pipeline run data.
+
+<ParamField path="run_id" type="string" required>
+  Run ID whose output to render
+</ParamField>
+
+<ParamField path="template" type="string" required>
+  Template name to use (e.g., "report_v1")
+</ParamField>
+
+<ParamField path="format" type="string" default="html">
+  Output format: "html", "markdown", "json", or "pdf"
+</ParamField>
+
+**Returns:** Rendered content in the specified format.
+
+---
+
+### kazi_emit_event
+
+Fire an event trigger to start pipelines listening for that event.
+
+<ParamField path="event_name" type="string" required>
+  Name of the event to emit
+</ParamField>
+
+<ParamField path="payload" type="object">
+  Event payload data
+</ParamField>
+
+**Example:**
+```json
+{
+  "event_name": "new_patent_filed",
+  "payload": {
+    "patent_id": "US-2026-12345",
+    "institution": "stanford"
+  }
+}
+```
+
+**Returns:** List of pipelines triggered by the event.

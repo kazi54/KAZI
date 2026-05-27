@@ -1,0 +1,102 @@
+---
+title: "MCP Overview"
+description: "Connect any AI model to KAZI OS via the Model Context Protocol"
+---
+
+# MCP Server
+
+KAZI OS includes a built-in [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that exposes the full platform to any compatible AI model — Claude, GPT, or any agent that speaks MCP.
+
+## What is MCP?
+
+MCP is a standard protocol that defines how AI models connect to external tools and data sources. Think of it as USB for AI — one universal connector between models and capabilities.
+
+## Why MCP for KAZI OS?
+
+Without MCP, operating KAZI OS requires:
+- Running CLI commands manually
+- Writing Python scripts
+- Calling the REST API
+
+With MCP, any AI model can directly:
+- Run pipelines for any tenant
+- Approve or reject checkpoints
+- Score items against rubrics
+- Generate reports
+- Manage tenants and configurations
+
+## Architecture
+
+```
+┌─────────────────────┐     MCP Protocol     ┌──────────────────┐
+│   AI Model          │ ◄──────────────────► │   KAZI OS MCP    │
+│   (Claude, GPT)     │                       │   Server         │
+└─────────────────────┘                       └────────┬─────────┘
+                                                       │
+                                              ┌────────▼─────────┐
+                                              │   KAZI OS Core   │
+                                              │   - Pipeline     │
+                                              │   - Scoring      │
+                                              │   - Delivery     │
+                                              │   - State        │
+                                              └──────────────────┘
+```
+
+## Quick Start
+
+### 1. Install KAZI OS
+
+```bash
+pip install kazi-os
+```
+
+### 2. Configure Claude Desktop
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "kazi-os": {
+      "command": "python",
+      "args": ["-m", "mcp.server"],
+      "cwd": "/path/to/your/project",
+      "env": {
+        "KAZI_PROJECT_DIR": "/path/to/your/project"
+      }
+    }
+  }
+}
+```
+
+### 3. Restart Claude Desktop
+
+Claude will now discover KAZI OS tools, resources, and prompts automatically.
+
+## What the MCP Server Exposes
+
+<CardGroup cols={3}>
+  <Card title="11 Tools" icon="wrench">
+    Actions the AI can perform — run pipelines, approve checkpoints, score items, manage tenants.
+  </Card>
+  <Card title="4 Resource Types" icon="database">
+    Data the AI can read — manifests, scoring configs, tenant configs, run history.
+  </Card>
+  <Card title="5 Prompts" icon="message-bot">
+    Pre-built workflows — analyze runs, draft configs, debug failures, design rubrics.
+  </Card>
+</CardGroup>
+
+## Example Interaction
+
+Once connected, you can ask Claude:
+
+> "Run the content production pipeline for Silicon Xchange"
+
+Claude will call `kazi_run_pipeline` with the correct parameters, monitor execution, and report results — all without you touching the terminal.
+
+## Next Steps
+
+- [Tools Reference](/mcp/tools) — All 11 tools with parameters
+- [Resources Reference](/mcp/resources) — All 4 resource types with URI patterns
+- [Prompts Reference](/mcp/prompts) — All 5 pre-built prompt templates
