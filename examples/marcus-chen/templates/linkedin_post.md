@@ -1,0 +1,5 @@
+{{ post_content }}
+
+---
+
+{{ hashtags }}

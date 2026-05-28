@@ -6,6 +6,108 @@ from pathlib import Path
 from typing import Optional
 
 
+def run_prompt_pipeline(
+    pipeline_name: str,
+    domain_dir: str = ".",
+    input_json: str = "{}",
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
+    """Run a prompt-driven pipeline from a domain directory.
+    
+    This is the primary execution path for KAZI OS. It reads the domain's
+    YAML files and executes the pipeline via LLM calls. No Python required.
+    """
+    from kazi.orchestrator.prompt_executor import PromptExecutor
+
+    domain_path = Path(domain_dir)
+    manifest_path = domain_path / "manifest.yaml"
+
+    if not manifest_path.exists():
+        print(f"\n  Error: No manifest.yaml found in {domain_path.resolve()}")
+        print(f"  Run 'kazi init <name>' to create a new domain, then cd into it.")
+        sys.exit(1)
+
+    payload = json.loads(input_json)
+
+    print(f"\n  KAZI OS — Pipeline Runner")
+    print(f"  ─────────────────────────")
+    print(f"  Domain:      {domain_path.resolve().name}")
+    print(f"  Pipeline:    {pipeline_name}")
+
+    try:
+        executor = PromptExecutor(domain_dir=domain_path)
+    except Exception as e:
+        print(f"\n  Error loading domain: {e}")
+        sys.exit(1)
+
+    # Dry run: show what would happen without executing
+    if dry_run:
+        info = asyncio.run(executor.dry_run(pipeline_name))
+        print(f"\n  [DRY RUN] Pipeline validated successfully\n")
+        print(f"  Model:       {info['constraints'].get('model', 'gpt-4o-mini')}")
+        print(f"  Stages:      {len(info['stages'])}")
+        print()
+        for i, stage in enumerate(info["stages"], 1):
+            print(f"    {i}. {stage['agent']}")
+            print(f"       Role: {stage['role']}")
+            print(f"       Goal: {stage['goal']}")
+            if stage.get("uses"):
+                print(f"       Uses: {', '.join(stage['uses'])}")
+            print()
+        print(f"  Domain files loaded:")
+        for name, loaded in info["domain_files_loaded"].items():
+            status = "✓" if loaded else "✗"
+            print(f"    {status} {name}.yaml")
+        print()
+        return
+
+    # Execute the pipeline
+    if payload:
+        print(f"  Input:       {json.dumps(payload)}")
+    print(f"\n  Executing...\n")
+
+    try:
+        result = asyncio.run(executor.run(pipeline_name, payload))
+    except Exception as e:
+        print(f"\n  Error: {e}")
+        sys.exit(1)
+
+    # Display results
+    print(f"  ─────────────────────────")
+    print(f"  Status:      {result.status}")
+    print(f"  Model:       {result.model}")
+    print(f"  Tokens:      {result.total_tokens}")
+    print(f"  Stages:      {len(result.stages)}")
+    print()
+
+    if verbose:
+        print(f"  ── Stage Details ──\n")
+        for i, stage in enumerate(result.stages, 1):
+            print(f"  {i}. {stage.agent} ({stage.tokens_used} tokens)")
+            if stage.council_feedback:
+                print(f"     [Council review with {len(stage.council_feedback['evaluations'])} advisors]")
+            print()
+
+    # Output the final result
+    print(f"  ══════════════════════════════════════════════════")
+    print(f"  FINAL OUTPUT")
+    print(f"  ══════════════════════════════════════════════════\n")
+    print(result.final_output)
+    print(f"\n  ══════════════════════════════════════════════════\n")
+
+    # Save output to file
+    output_dir = domain_path / "output"
+    output_dir.mkdir(exist_ok=True)
+    
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = output_dir / f"{pipeline_name}_{timestamp}.md"
+    output_file.write_text(result.final_output)
+    print(f"  Saved to: {output_file}")
+    print()
+
+
 def run_pipeline(
     pipeline_name: str,
     tenant: Optional[str] = None,
@@ -14,10 +116,10 @@ def run_pipeline(
     dry_run: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Run a pipeline with the given configuration."""
+    """Legacy: Run a pipeline with the agent registry approach."""
     payload = json.loads(input_json)
 
-    print(f"\n  KAZI OS — Pipeline Runner")
+    print(f"\n  KAZI OS — Pipeline Runner (legacy mode)")
     print(f"  ─────────────────────────")
     print(f"  Pipeline:    {pipeline_name}")
 
@@ -28,7 +130,7 @@ def run_pipeline(
         print(f"  Tenant:      {tenant}")
         _run_single(pipeline_name, tenant, payload, dry_run, verbose)
     else:
-        print(f"  Tenant:      (default — no tenant scoping)")
+        print(f"  Tenant:      (default)")
         _run_single(pipeline_name, None, payload, dry_run, verbose)
 
 
@@ -39,7 +141,7 @@ def _run_single(
     dry_run: bool,
     verbose: bool,
 ) -> None:
-    """Run a pipeline for a single tenant."""
+    """Run a pipeline for a single tenant (legacy agent-registry mode)."""
     from kazi.orchestrator.builder import PipelineBuilder
     from kazi.agents.registry import AgentRegistry
     from kazi.state.store import create_state_store

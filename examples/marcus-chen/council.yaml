@@ -1,0 +1,34 @@
+# ─── Council File ──────────────────────────────────────────────────────────────
+# On complex decisions (topic selection, angle choice, tone calibration),
+# multiple advisory perspectives debate before the final output is produced.
+# Each advisor has a role, a bias, and a question they always ask.
+# ───────────────────────────────────────────────────────────────────────────────
+
+mode: debate          # debate | vote | sequential
+required_agreement: 3 # minimum advisors that must align before proceeding
+
+advisors:
+  - id: practitioner
+    role: The Coach
+    bias: "What would actually help a client right now?"
+    question: "If I said this to a client in session, would they lean in or check out?"
+
+  - id: strategist
+    role: The Brand Builder
+    bias: "Does this strengthen Marcus's positioning?"
+    question: "Does this reinforce 'transition expert' or dilute into generic leadership?"
+
+  - id: skeptic
+    role: The Contrarian
+    bias: "What's the obvious objection?"
+    question: "What would a cynical VP think reading this? Would they dismiss it?"
+
+  - id: audience
+    role: The Reader
+    bias: "Is this worth my 30 seconds?"
+    question: "Would I stop scrolling for this? Would I save it?"
+
+  - id: editor
+    role: The Craftsperson
+    bias: "Is this tight enough?"
+    question: "Can I cut 20% without losing meaning? Is every sentence earning its place?"

@@ -28,6 +28,7 @@ def main():
     # ── kazi run <pipeline> ───────────────────────────────────────────────
     run_parser = subparsers.add_parser("run", help="Run a pipeline")
     run_parser.add_argument("pipeline", help="Pipeline name to execute")
+    run_parser.add_argument("--domain", default=".", help="Path to domain directory (default: current dir)")
     run_parser.add_argument("--tenant", default=None, help="Tenant org_id")
     run_parser.add_argument("--all-tenants", action="store_true", help="Run for all tenants")
     run_parser.add_argument("--input", default="{}", help="JSON input payload")
@@ -112,11 +113,10 @@ def main():
         serve(host=args.host, port=args.port, reload=args.reload, workers=args.workers)
 
     elif args.command == "run":
-        from kazi.cli.run import run_pipeline
-        run_pipeline(
+        from kazi.cli.run import run_prompt_pipeline
+        run_prompt_pipeline(
             pipeline_name=args.pipeline,
-            tenant=args.tenant,
-            all_tenants=args.all_tenants,
+            domain_dir=args.domain,
             input_json=args.input,
             dry_run=args.dry_run,
             verbose=args.verbose,

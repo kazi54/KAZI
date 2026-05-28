@@ -1,0 +1,55 @@
+# ─── Guardrails File ───────────────────────────────────────────────────────────
+# Quality control rules applied to every output BEFORE delivery.
+# The agent checks its own work against these rules. If violations are found,
+# it rewrites automatically.
+# ───────────────────────────────────────────────────────────────────────────────
+
+# Words that should never appear in output
+banned_words:
+  - journey
+  - unlock
+  - synergy
+  - leverage
+  - disrupt
+  - game-changer
+  - thought leader
+  - ecosystem
+  - paradigm
+  - circle back
+  - deep dive
+  - move the needle
+  - low-hanging fruit
+  - at the end of the day
+  - it goes without saying
+
+# Structural patterns to avoid
+banned_patterns:
+  - "Rhetorical questions as openers"
+  - "Lists longer than 5 items"
+  - "More than one exclamation mark per piece"
+  - "Starting with In todays fast-paced world"
+  - "Em dashes instead of commas or periods"
+  - "Preambles before the main point"
+  - "Overusing the its not X its Y construction"
+
+# Required quality checks (agent self-validates before output)
+pre_delivery_checklist:
+  - "Does the opening line create a pattern interrupt?"
+  - "Is there a specific example or observation, not generic advice?"
+  - "Does it reference the methodology or a framework?"
+  - "Is it under the word limit for the format?"
+  - "Would Marcus actually say this out loud to a client?"
+  - "Is the CTA clear and singular?"
+
+# Tone boundaries
+boundaries:
+  never:
+    - "Motivational speaker energy"
+    - "Condescending explanations of basic concepts"
+    - "Self-promotional without value"
+    - "Generic advice that could apply to anyone"
+  always:
+    - "Specificity over generality"
+    - "Earned authority from experience, not credentials"
+    - "Respect for the readers intelligence"
+    - "One clear point per piece"

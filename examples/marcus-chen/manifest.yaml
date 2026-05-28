@@ -1,0 +1,96 @@
+# ─── Domain Manifest ───────────────────────────────────────────────────────────
+# The operational blueprint. Defines what pipelines exist, what agents run
+# in each stage, and what triggers execution.
+# ───────────────────────────────────────────────────────────────────────────────
+
+domain:
+  name: marcus-chen
+  display_name: Marcus Chen Content System
+  version: "1.0.0"
+  description: Content production system for executive transition coaching
+
+# ─── Pipelines ────────────────────────────────────────────────────────────────
+pipelines:
+  weekly-post:
+    description: "Generate a LinkedIn post from a topic or observation"
+    stages:
+      - agent: researcher
+        role: "Research the topic, find relevant data points or trends"
+        goal: "Provide 3-5 specific facts, statistics, or patterns related to the topic"
+        output: structured
+
+      - agent: drafter
+        role: "Write the LinkedIn post in Marcus's voice"
+        goal: "Produce a 150-300 word post with hook, body, and CTA"
+        uses: [identity, voice, guardrails]
+        output: text
+
+      - agent: council_review
+        role: "Run the draft through the advisory council"
+        goal: "Get alignment from at least 3 advisors, surface objections"
+        uses: [council]
+        output: structured
+
+      - agent: editor
+        role: "Final polish based on council feedback"
+        goal: "Produce publication-ready post that passes all guardrail checks"
+        uses: [voice, guardrails]
+        output: text
+
+    delivery:
+      template: linkedin_post.md
+      format: [markdown]
+
+  monthly-article:
+    description: "Generate a deep-dive newsletter article from a framework"
+    stages:
+      - agent: researcher
+        role: "Deep research on the framework topic"
+        goal: "Gather evidence, case patterns, and counterarguments"
+        output: structured
+
+      - agent: outliner
+        role: "Structure the article around one framework"
+        goal: "Create a clear outline: opening story, framework explanation, application, action item"
+        uses: [identity, voice]
+        output: structured
+
+      - agent: writer
+        role: "Write the full article"
+        goal: "500-800 words, one framework, one action item"
+        uses: [identity, voice, guardrails]
+        output: text
+
+      - agent: council_review
+        role: "Advisory review"
+        goal: "Ensure depth, specificity, and brand alignment"
+        uses: [council]
+        output: structured
+
+      - agent: editor
+        role: "Final edit and polish"
+        goal: "Publication-ready article"
+        uses: [voice, guardrails]
+        output: text
+
+    delivery:
+      template: newsletter.md
+      format: [markdown, html]
+
+# ─── Triggers ─────────────────────────────────────────────────────────────────
+triggers:
+  - pipeline: weekly-post
+    type: scheduled
+    schedule: "every Tuesday at 7am"
+
+  - pipeline: monthly-article
+    type: scheduled
+    schedule: "first Monday of month at 6am"
+
+# ─── Constraints ──────────────────────────────────────────────────────────────
+constraints:
+  max_tokens_per_run: 4000
+  model: gpt-4.1-mini
+  temperature: 0.7
+  retry_on_guardrail_fail: true
+  max_retries: 2
